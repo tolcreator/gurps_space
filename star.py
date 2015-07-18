@@ -56,12 +56,9 @@ class Star(body.Body):
         self.radius = self.DetermineRadius()
 
     def __str__(self):
-        ret = "%s %s" % (
+        return "%s %s" % (
                 self.spectralType,
                 self.luminosityClass)
-        if self.orbit:
-            ret = ret + " r=%f e=%f" % (self.orbit.GetRadius(), self.orbit.GetEccentricity())
-        return ret
 
     def GetMass(self):
         return self.mass

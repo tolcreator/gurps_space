@@ -171,10 +171,16 @@ class System:
         ret = primary.__str__()
         for orbit in primary.GetOrbiters():
             companion = orbit.GetOrbiter()
-            ret = ret + "\n    " + companion.__str__()
+            ret = ret + "\n    "
+            ret = ret + orbit.__str__()
+            ret = ret + " "
+            ret = ret + companion.__str__()
             for orbit in companion.GetOrbiters():
                 companion = orbit.GetOrbiter()
-                ret = ret + "\n        " + companion.__str__()
+                ret = ret + "\n        "
+                ret = ret + orbit.__str__()
+                ret = ret + " "
+                ret = ret + companion.__str__()
         return ret
 
     def GeneratePrimaryMass(self):

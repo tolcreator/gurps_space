@@ -24,3 +24,6 @@ class Orbit:
 
     def GetMaxSeparation(self):
         return (1 + self.eccentricity) * self.radius
+
+    def __str__(self):
+        return "%0.2f AU ecc %0.2f" % (self.radius, self.eccentricity)
