@@ -564,6 +564,20 @@ def GetGasGiantOuterMoonMod(r):
         mod = -1
     return mod
 
+def GetTerrestrialMajorMoonMod(r, t):
+    mod = 0
+    if r <= 0.75:
+        mod = -3
+    elif r <= 1.5:
+        mod = -1
+    if t == "Tiny":
+        mod = mod - 2
+    elif t == "Small":
+        mod = mod - 1
+    elif t == "Large":
+        mod = mod + 1
+    return mod
+
 def GenerateWorlds(parentStar, worlds):
     arrangement = GenerateGasGiantArrangement(parentStar)
     placements = GeneratePlacements(parentStar, arrangement)
@@ -581,18 +595,11 @@ def GenerateWorlds(parentStar, worlds):
             """ Moons """
             majorMoons = 0
             minorMoons = 0
-            if placement["Radius"] >= 0.5:
-                mod = 0
-                if placement["Radius"] <= 0.75:
-                    mod = -3
-                elif placement["Radius"] <= 1.5:
-                    mod = -1
-                if placement["Type"] == "Tiny":
-                    mod = mod - 2
-                elif placement["Type"] == "Small":
-                    mod = mod - 1
-                elif placement["Type"] == "Large":
-                    mod = mod + 1
+            if placement["Radius"] <= 0.5:
+                majorMoons = 0
+                minorMoons = 0
+            else:
+                mod = GetTerrestrialMajorMoonMod(placement["Radius"], placement["Type"])
                 majorMoons = max(dice.roll(1, 6) + mod - 4, 0)
                 if majorMoons == 0:
                     minorMoons = max(dice.roll(1, 6) + mod - 2, 0)
@@ -624,7 +631,7 @@ def GenerateWorlds(parentStar, worlds):
             o = orbit.Orbit(parentStar, w, placement["Radius"], eccentricity)
             w.SetOrbit(o)
             parentStar.AddOrbiter(o)
-            w.Generate()            
+            w.GenerateBasic()            
             """ Inner Moons """
             innerMoons = max(dice.roll(2, 6) + GetGasGiantInnerMoonMod(placement["Radius"]), 0)
             w.SetNumInnerMoons(innerMoons)
