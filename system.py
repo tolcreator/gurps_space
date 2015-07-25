@@ -164,7 +164,7 @@ def GenerateCompanionOrbit(primary, separationMod, minRadius, maxRadius):
         eccentricity = 0.95
     return { "separation":separation, "radius":radius, "eccentricity":eccentricity }
 
-def GenerateStars(age, stars, orbits):
+def GenerateStars(age, stars):
     numStars = GenerateNumStars()
     """ Primary Star """
     primaryMass = GeneratePrimaryMass()
@@ -184,7 +184,6 @@ def GenerateStars(age, stars, orbits):
         details = GenerateCompanionOrbit(primary, mod, minRadius, 0)
         myOrbit = orbit.Orbit(primary, companion, details["radius"], details["eccentricity"])
         minRadius = myOrbit.GetMaxSeparation() * 3
-        orbits.append(myOrbit)
         primary.AddOrbiter(myOrbit)
         companion.SetOrbit(myOrbit)
         mod = 6
@@ -199,7 +198,6 @@ def GenerateStars(age, stars, orbits):
             maxRadius = myOrbit.GetMinSeparation() / 3
             details = GenerateCompanionOrbit(distant, 0, 0, maxRadius)
             myOrbit = orbit.Orbit(companion, distant, details["radius"], details["eccentricity"])
-            orbits.append(myOrbit)
             companion.AddOrbiter(myOrbit)
             distant.SetOrbit(myOrbit)
 
@@ -417,21 +415,61 @@ def GeneratePlacements(parentStar):
     """ And we're done """ 
     return placements
 
-def GenerateWorlds(parentStar, age, worlds, orbits):
+def GetWorldSubtype(mainType, blackBodyTemperature):
+    if mainType == "Tiny":
+        if blackBodyTemperature <= 140:
+            return "Ice"        #May turn out to be Sulfur later
+        return "Rock"
+    if mainType == "Small":
+        if blackBodyTemperature <= 80:
+            return "Hadean"
+        if blackBodyTemperature <= 140:
+            return "Ice"
+        return "Rock"
+    if mainType == "Standard" or mainType == "Large":
+        if blackBodyTemperature <= 80:
+            return "Hadean"
+        if blackBodyTemperature <= 150:
+            return "Ice"    
+        if blackBodyTemperature <= 230:
+            return "Ammonia"    #May turn out to be Ice later
+        if blackBodyTemperature <= 240:
+            return "Ice"
+        if blackBodyTemperature <= 320:
+            return "Ocean"      #May turn out to be Garden later
+        if blackBodyTemperature <= 500:
+            return "Greenhouse"
+        return "Chthonian"
+    return "N/a"
+
+""" Including Moons """
+def GenerateWorld(parentStar, placement):
+    oRadius = placement["Radius"]
+    blackBodyTemperature = 278 * ( pow(parentStar.GetLuminosity(), 0.25) / pow(oRadius, 0.5) )
+    subType = GetWorldSubtype(placement["Type"], blackBodyTemperature)
+    """ Fix Ammonia worlds now """
+    if subType == "Ammonia" and parentStar.GetMass() > 0.65:
+        subType = "Ice"
+    print "    %06.3f: %s %s" % (placement["Radius"], placement["Type"], subType)
+
+def GenerateWorlds(parentStar, age, worlds):
     placements = GeneratePlacements(parentStar)
+    print parentStar
+    for placement in placements:
+        if not placement["Type"] == "Empty":
+            world = GenerateWorld(parentStar, placement)
 
 class System:
     def __init__(self):
         self.stars = []
-        self.orbits = []
         self.worlds = []
         self.age = 0.0
 
     def Generate(self):
         self.age = GenerateAge()
-        GenerateStars(self.age, self.stars, self.orbits)
+        GenerateStars(self.age, self.stars)
         for s in self.stars:
-            GenerateWorlds(s, self.age, self.worlds, self.orbits)
+            GenerateWorlds(s, self.age, self.worlds)
               
     def __str__(self):
         primary = self.stars[0]
