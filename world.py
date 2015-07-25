@@ -430,14 +430,32 @@ class TerrestrialWorld(World):
         self.avTempNightFace = self.averageTemperature * NF
         self.dayFaceClimate = GetClimate(self.avTempDayFace)
         self.nightFaceClimate = GetClimate(self.avTempNightFace)            
-        
+       
+def GenerateGasGiantSubtype(mod):
+    r = dice.roll(3, 6) + mod
+    if r <= 10:
+        return "Small"
+    if r <= 16:
+        return "Medium"
+    return "Large"
+
 class GasGiant(World):
     def __init__(self, parentStar):
         World.__init__(self, "Gas Giant", parentStar)
         self.numSulfurWorlds = 0
+        self.numInnerMoons = 0
 
     def Generate(self):
-        """ Do Nothing Yet """
+        mod = 0
+        solarRadius = self.GetOrbit().GetRadius()
+        if self.parentStar.GetIsInsideSnowLine(solarRadius):
+            mod = 4
+        elif self.parentStar.GetIsFirstOrbitBeyondSnowLine(solarRadius):
+            mod = 4
+        self.subType = GenerateGasGiantSubtype(mod)
+        
+    def Show(self):
+        return self.subType + " " + self.mainType
 
     def GetNumSulfurWorlds(self):
         return self.numSulfurWorlds
@@ -445,9 +463,20 @@ class GasGiant(World):
     def IncNumSulfurWorlds(self):
         self.numSulfurWorlds = self.numSulfurWorlds + 1
 
+    def SetNumInnerMoons(self, n):
+        self.numInnerMoons = n
+
 class Belt(World):
     def __init__(self, parentStar):
         World.__init__(self, "Belt", parentStar)
+
+    def Generate(self):
+        """ Do Nothing Yet """
+
+class Moonlet(World):
+    def __init__(self, parentStar, parentWorld):
+        World.__init__(self, "Moonlet", parentStar)
+        self.parentWorld = parentWorld
 
     def Generate(self):
         """ Do Nothing Yet """

@@ -204,8 +204,7 @@ def GenerateStars(age, stars):
 
 def GenerateGasGiantArrangement(parentStar):
     """ Snow line requires *initial* luminosity """
-    snowLine = 4.85 * math.sqrt(parentStar.GetInitialLuminosity())
-
+    snowLine = parentStar.GetSnowLine()
     forbiddenZones = GetForbiddenZones(parentStar)
     """ Check if snow line within a forbidden zone """
     disqualified = False
@@ -304,8 +303,7 @@ def GeneratePlacements(parentStar, arrangement):
     outerLimit = 40 * parentStar.GetMass()
 
     """ Snow line requires *initial* luminosity """
-    snowLine = 4.85 * math.sqrt(parentStar.GetInitialLuminosity())
-
+    snowLine = parentStar.GetSnowLine()
     forbiddenZones = GetForbiddenZones(parentStar)
 
     firstGasGiantRadius = 0
@@ -491,6 +489,81 @@ def GenerateTerrestrialMajorMoonOrbitRadius(moonType, planetType, existingOrbit)
         r = dice.roll(2, 6) + mod
     return r
 
+def GenerateTerrestrialMinorMoonOrbitRadius(existingOrbits):
+    legal = False
+    while not legal:
+        r = float(dice.roll(1, 6) + 4) / 4
+        legal = True
+        for e in existingOrbits:
+            if e == r:
+                legal = False
+    existingOrbits.append(r)
+    return r
+
+def GenerateGasGiantInnerMoonOrbitRadius():
+    return float(dice.roll(1, 6) + 4) / 4
+
+def GenerateGasGiantMajorMoonOrbitRadius(existingOrbits):
+    legal = False
+    while not legal:
+        r = dice.roll(3, 6) + 3
+        if r >= 15:
+            r = r + dice.roll(2, 6)
+        rad = float(r) * 3.34
+        legal = True
+        for e in existingOrbits:
+            if e == rad:
+                legal = False
+    existingOrbits.append(rad)
+    return rad
+
+def GenerateGasGiantOuterMoonOrbitRadius(existingOrbits):
+    legal = False
+    while not legal:
+        r = dice.roll(3, 6) + 3
+        if r >= 15:
+            r = r + dice.roll(2, 6)
+        rad = float(r) / 2
+        legal = True
+        for e in existingOrbits:
+            if e == rad:
+                legal = False
+    existingOrbits.append(rad)
+    return rad
+
+
+def GetGasGiantInnerMoonMod(r):
+    mod = 0
+    if r <= 0.1:
+        mod = -10
+    elif r <= 0.5:
+        mod = -8
+    elif r <= 0.75:
+        mod = -6
+    elif r <= 1.5:
+        mod = -3
+    return mod
+
+def GetGasGiantMajorMoonMod(r):
+    mod = 0
+    if r <= 0.5:
+        mod = -5
+    elif r <= 0.75:
+        mod = -4
+    elif r <= 1.5:
+        mod = -1
+    return mod
+
+def GetGasGiantOuterMoonMod(r):
+    mod = 0
+    if r <= 0.75:
+        mod = -5
+    elif r <= 1.5:
+        mod = -4
+    elif r <= 3.0:
+        mod = -1
+    return mod
+
 def GenerateWorlds(parentStar, worlds):
     arrangement = GenerateGasGiantArrangement(parentStar)
     placements = GeneratePlacements(parentStar, arrangement)
@@ -534,6 +607,15 @@ def GenerateWorlds(parentStar, worlds):
                 m.SetOrbit(o)
                 w.AddOrbiter(o)
                 m.GenerateBasic()
+            existingOrbits = []
+            for i in range(0, minorMoons):
+                m = world.Moonlet(parentStar, parentWorld = w)
+                r = GenerateTerrestrialMinorMoonOrbitRadius(existingOrbits)
+                radius = r * w.GetDiameter()
+                o = orbit.Orbit(w, m, radius, 0, oType = "Lunar")
+                m.SetOrbit(o)
+                w.AddOrbiter(o)
+                m.Generate()
                  
         elif placement["Type"] == "Gas Giant":
             w = world.GasGiant(parentStar)
@@ -543,6 +625,47 @@ def GenerateWorlds(parentStar, worlds):
             w.SetOrbit(o)
             parentStar.AddOrbiter(o)
             w.Generate()            
+            """ Inner Moons """
+            innerMoons = max(dice.roll(2, 6) + GetGasGiantInnerMoonMod(placement["Radius"]), 0)
+            w.SetNumInnerMoons(innerMoons)
+            for i in range(0, innerMoons):
+                m = world.Moonlet(parentStar, parentWorld = w)
+                r = GenerateGasGiantInnerMoonOrbitRadius()
+                radius = r * w.GetDiameter()
+                o = orbit.Orbit(w, m, radius, 0, oType = "Lunar")
+                m.SetOrbit(o)
+                w.AddOrbiter(o)
+                m.Generate()
+            """ Major Moons """
+            if placement["Radius"] <= 0.1:
+                majorMoons = 0
+            else:
+                majorMoons = max(dice.roll(1, 6) + GetGasGiantMajorMoonMod(placement["Radius"]),  0)
+            existingOrbits = []
+            for i in range(0, majorMoons):
+                t = GenerateMoonType("Gas Giant")    
+                m = world.TerrestrialWorld(t, parentStar, parentWorld = w)
+                r = GenerateGasGiantMajorMoonOrbitRadius(existingOrbits)
+                radius = r * w.GetDiameter()
+                o = orbit.Orbit(w, m, radius, 0, oType = "Lunar")
+                m.SetOrbit(o)
+                w.AddOrbiter(o)
+                m.GenerateBasic()
+            """ Outer Moons """
+            if placement["Radius"] < 0.5:
+                outerMoons = 0
+            else:
+                outerMoons = max(dice.roll(1, 6) + GetGasGiantOuterMoonMod(placement["Radius"]), 0)
+            existingOrbits = []
+            for i in range(0, innerMoons):
+                m = world.Moonlet(parentStar, parentWorld = w)
+                r = GenerateGasGiantOuterMoonOrbitRadius(existingOrbits)
+                radius = r * w.GetDiameter()
+                o = orbit.Orbit(w, m, radius, 0, oType = "Lunar")
+                m.SetOrbit(o)
+                w.AddOrbiter(o)
+                m.Generate()
+
         elif placement["Type"] == "Belt":
             w = world.Belt(parentStar)
             mod = 0

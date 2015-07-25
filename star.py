@@ -73,6 +73,24 @@ class Star(body.Body):
     def GetInitialLuminosity(self):
         return self.setEntry["lmin"]
 
+    def GetSnowLine(self):
+        return 4.85 * math.sqrt(self.GetInitialLuminosity())
+
+    def GetIsInsideSnowLine(self, r):
+        if r <= self.GetSnowLine():
+            return True
+        return False
+
+    def GetIsFirstOrbitBeyondSnowLine(self, r):
+        for o in self.orbiters:
+            if r == o.GetRadius():
+                if r > self.GetSnowLine():
+                    return True
+            else:
+                 if o.GetRadius() > self.GetSnowLine():
+                     return False
+        return False
+
     def GetStellarEvolutionTableEntry(self):
         for entry in stellarEvolutionTable:
             if self.mass <= entry["mass"]:
