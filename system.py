@@ -509,7 +509,7 @@ def GenerateGasGiantMajorMoonOrbitRadius(existingOrbits):
         r = dice.roll(3, 6) + 3
         if r >= 15:
             r = r + dice.roll(2, 6)
-        rad = float(r) * 3.34
+        rad = float(r) / 2
         legal = True
         for e in existingOrbits:
             if e == rad:
@@ -523,7 +523,7 @@ def GenerateGasGiantOuterMoonOrbitRadius(existingOrbits):
         r = dice.roll(3, 6) + 3
         if r >= 15:
             r = r + dice.roll(2, 6)
-        rad = float(r) / 2
+        rad = float(r) * 3.34
         legal = True
         for e in existingOrbits:
             if e == rad:
