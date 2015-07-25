@@ -44,8 +44,9 @@ class Star(body.Body):
     """ Mass is in stellar masses. 1.0 = mass of the Sun """
     """ Age is in Billions of years """
     def __init__(self, mass, age):
-        body.Body.__init__(self, mass, 0)
+        body.Body.__init__(self)
         self.age = age
+        self.mass = mass
 
     def Generate(self):
         self.setEntry = self.GetStellarEvolutionTableEntry()
@@ -59,6 +60,12 @@ class Star(body.Body):
         return "%s %s" % (
                 self.spectralType,
                 self.luminosityClass)
+
+    def GetType(self):
+        return "Star"
+
+    def GetAge(self):
+        return self.age
 
     def GetMass(self):
         return self.mass

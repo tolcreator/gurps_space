@@ -1,9 +1,7 @@
 import orbit
 
 class Body:
-    def __init__(self, mass, radius):
-        self.mass = mass
-        self.radius = radius
+    def __init__(self):
         self.orbiters = []
         self.orbit = None
 

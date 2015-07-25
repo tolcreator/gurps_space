@@ -1,5 +1,6 @@
 import dice
 import star
+import world
 import orbit
 import math
 
@@ -201,7 +202,19 @@ def GenerateStars(age, stars):
             companion.AddOrbiter(myOrbit)
             distant.SetOrbit(myOrbit)
 
-def GenerateGasGiantArrangement():
+def GenerateGasGiantArrangement(parentStar):
+    """ Snow line requires *initial* luminosity """
+    snowLine = 4.85 * math.sqrt(parentStar.GetInitialLuminosity())
+
+    forbiddenZones = GetForbiddenZones(parentStar)
+    """ Check if snow line within a forbidden zone """
+    disqualified = False
+    for zone in forbiddenZones:
+        if snowLine > zone["in"] and snowLine < zone["out"]:
+            disqualified = True
+    if disqualified:
+        return "None"
+
     r = dice.roll(3, 6)
     if r <= 10:
         return "None"
@@ -269,8 +282,21 @@ def GeneratePlacementType(mod):
             return "Standard"
         return "Large"
 
+def GetForbiddenZones(parentStar):
+    forbiddenZones = []
+    if parentStar.GetOrbit():
+        innerEdge = parentStar.GetOrbit().GetMinSeparation() / 3
+        forbiddenZones.append( { "in":innerEdge, "out":0.0 } )
+    for orbiter in parentStar.GetOrbiters():
+        innerEdge = orbiter.GetMinSeparation() / 3
+        outerEdge = orbiter.GetMaxSeparation() * 3
+        forbiddenZones.append( { "in":innerEdge, "out":outerEdge } )
+    return forbiddenZones
+
+
+
 """ Placements are rough orbits """
-def GeneratePlacements(parentStar):
+def GeneratePlacements(parentStar, arrangement):
     """ Determine Inner Limit """
     limit1 = 0.1 * parentStar.GetMass()
     limit2 = 0.01 * math.sqrt(parentStar.GetLuminosity())
@@ -282,26 +308,8 @@ def GeneratePlacements(parentStar):
     """ Snow line requires *initial* luminosity """
     snowLine = 4.85 * math.sqrt(parentStar.GetInitialLuminosity())
 
-    """ Forbidden Zones """
-    forbiddenZones = []
-    if parentStar.GetOrbit():
-        innerEdge = parentStar.GetOrbit().GetMinSeparation() / 3
-        forbiddenZones.append( { "in":innerEdge, "out":0.0 } )
-    for orbiter in parentStar.GetOrbiters():
-        innerEdge = orbiter.GetMinSeparation() / 3
-        outerEdge = orbiter.GetMaxSeparation() * 3
-        forbiddenZones.append( { "in":innerEdge, "out":outerEdge } )
+    forbiddenZones = GetForbiddenZones(parentStar)
 
-    """ See if we have Gas Giants """
-    """ Check if snow line within a forbidden zone """
-    disqualified = False
-    for zone in forbiddenZones:
-        if snowLine > zone["in"] and snowLine < zone["out"]:
-            disqualified = True
-    if disqualified:
-        arrangement = "None"
-    else:
-        arrangement = GenerateGasGiantArrangement()
     firstGasGiantRadius = 0
     if arrangement == "Conventional":
         r = dice.roll(2, 6) - 2
@@ -415,49 +423,60 @@ def GeneratePlacements(parentStar):
     """ And we're done """ 
     return placements
 
-def GetWorldSubtype(mainType, blackBodyTemperature):
-    if mainType == "Tiny":
-        if blackBodyTemperature <= 140:
-            return "Ice"        #May turn out to be Sulfur later
-        return "Rock"
-    if mainType == "Small":
-        if blackBodyTemperature <= 80:
-            return "Hadean"
-        if blackBodyTemperature <= 140:
-            return "Ice"
-        return "Rock"
-    if mainType == "Standard" or mainType == "Large":
-        if blackBodyTemperature <= 80:
-            return "Hadean"
-        if blackBodyTemperature <= 150:
-            return "Ice"    
-        if blackBodyTemperature <= 230:
-            return "Ammonia"    #May turn out to be Ice later
-        if blackBodyTemperature <= 240:
-            return "Ice"
-        if blackBodyTemperature <= 320:
-            return "Ocean"      #May turn out to be Garden later
-        if blackBodyTemperature <= 500:
-            return "Greenhouse"
-        return "Chthonian"
-    return "N/a"
+def GetWorldEccentricity(mod):
+    r = dice.roll(3, 6) + mod
+    upvar = 0.025
+    downvar = 0.025
+    if r <= 3:
+        rough = 0.0
+    elif r <= 6:
+        rough = 0.05
+    elif r <= 9:
+        rough = 0.1
+    elif r <= 11:
+        rough = 0.15
+    elif r <= 12:
+        rough = 0.2
+        upvar = 0.05
+    elif r >= 18:
+        rough = 0.8
+        upvar = 0.05
+        downvar = 0.05
+    else:
+        rough = float(r - 10) / 10
+        upvar = 0.05
+        downvar = 0.05
+    r = dice.roll(1, 2)
+    if r == 1:
+        r = dice.roll(1, 100)
+        upvar = (upvar / 100) * float(r)
+        return rough + upvar
+    else:
+        r = dice.roll(1, 100)
+        downvar = (downvar / 100) * float(r)
+        return rough - downvar
 
-""" Including Moons """
-def GenerateWorld(parentStar, placement):
-    oRadius = placement["Radius"]
-    blackBodyTemperature = 278 * ( pow(parentStar.GetLuminosity(), 0.25) / pow(oRadius, 0.5) )
-    subType = GetWorldSubtype(placement["Type"], blackBodyTemperature)
-    """ Fix Ammonia worlds now """
-    if subType == "Ammonia" and parentStar.GetMass() > 0.65:
-        subType = "Ice"
-    print "    %06.3f: %s %s" % (placement["Radius"], placement["Type"], subType)
-
-def GenerateWorlds(parentStar, age, worlds):
-    placements = GeneratePlacements(parentStar)
+def GenerateWorlds(parentStar, worlds):
+    arrangement = GenerateGasGiantArrangement(parentStar)
+    placements = GeneratePlacements(parentStar, arrangement)
     print parentStar
+    world.PrintBanner()
     for placement in placements:
-        if not placement["Type"] == "Empty":
-            world = GenerateWorld(parentStar, placement)
+        if placement["Type"] == "Tiny" or placement["Type"] == "Small" or placement["Type"] == "Standard" or placement["Type"] == "Large":
+            w = world.TerrestrialWorld(placement["Type"], parentStar)
+            mod = 0
+            if arrangement == "Conventional":
+                mod = -6 
+            eccentricity = GetWorldEccentricity(mod)
+            o = orbit.Orbit(parentStar, w, placement["Radius"], eccentricity)
+            parentStar.AddOrbiter(o)
+            w.SetOrbit(o)
+            w.Generate()
+            w.Show()
+        elif placement["Type"] == "Gas Giant":
+            print "    Gas Giant"
+        elif placement["Type"] == "Belt":
+            print "    Belt"
 
 class System:
     def __init__(self):
@@ -469,7 +488,7 @@ class System:
         self.age = GenerateAge()
         GenerateStars(self.age, self.stars)
         for s in self.stars:
-            GenerateWorlds(s, self.age, self.worlds)
+            GenerateWorlds(s, self.worlds)
               
     def __str__(self):
         primary = self.stars[0]
