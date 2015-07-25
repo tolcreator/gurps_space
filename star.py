@@ -56,13 +56,10 @@ class Star(body.Body):
         self.spectralType = self.DetermineSpectralType()
         self.radius = self.DetermineRadius()
 
-    def __str__(self):
+    def GetType(self):
         return "%s %s" % (
                 self.spectralType,
                 self.luminosityClass)
-
-    def GetType(self):
-        return "Star"
 
     def GetAge(self):
         return self.age

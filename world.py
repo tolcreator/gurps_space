@@ -306,22 +306,27 @@ class World(body.Body):
         body.Body.__init__(self)
         self.mainType = mainType
         self.parentStar = parentStar
+        self.diameter = 0
 
     def GetType(self):
         return self.mainType
+
+    def GetDiameter(self):
+        return self.diameter
 
 class TerrestrialWorld(World):
     def __init__(self, mainType, parentStar, parentWorld = None):
         World.__init__(self, mainType, parentStar)
         self.parentWorld = parentWorld
+
     def Show(self):
         if self.solarTideLocked:
             locked = "Locked"
         else:
             locked = ""
-        print "    %- 10.3f %-10s %-10s %-10s %-10s %- 10.3f %- 10d %s" % (self.orbit.GetRadius(), self.mainType, self.subType, self.atmosphericCategory, self.climate, self.gravity, self.hydrosphere, locked)
+        return "%-10s %-10s %-10s %-10s %- 10.3f %- 10d %s" % (self.mainType, self.subType, self.atmosphericCategory, self.climate, self.gravity, self.hydrosphere, locked)
 
-    def Generate(self):
+    def GenerateBasic(self):
         if self.parentWorld:
             solarRadius = self.parentWorld.GetOrbit().GetRadius()
         else:
@@ -371,13 +376,12 @@ class TerrestrialWorld(World):
         self.atmosphericCategory = GetAtmosphericCategory(self.atmosphericPressure)
 
         """ Check if tide locked to star """
+        self.solarTideLocked = False
         if not self.parentWorld:
             tide = (0.46 * self.parentStar.GetMass() * self.diameter) / pow(solarRadius, 3)
             if tide >= 50:
                 self.solarTideLocked = True
                 self.TideLockCorrection()
-            else:
-                self.solarTideLocked = False
 
     def TideLockCorrection(self):
         DF = 1.0
@@ -399,7 +403,7 @@ class TerrestrialWorld(World):
             self.atmosphericPressure = p
         elif self.atmosphericCategory == "Thin":
             self.atmosphericCategory = "Very Thin"
-            self.hydrosphere = min(self.hydrosphere - 50, 0)
+            self.hydrosphere = max(self.hydrosphere - 50, 0)
             DF = 1.16
             NF = 0.67
             p = p - 0.5
@@ -408,7 +412,7 @@ class TerrestrialWorld(World):
             self.atmosphericPressure = p
         elif self.atmosphericCategory == "Standard":
             self.atmosphericCategory = "Thin"
-            self.hydrosphere = min(self.hydrosphere - 25, 0)
+            self.hydrosphere = max(self.hydrosphere - 25, 0)
             DF = 1.12
             NF = 0.8
             p = p - 0.8
@@ -416,7 +420,7 @@ class TerrestrialWorld(World):
             p = p + 0.5
             self.atmosphericPressure = p
         elif self.atmosphericCategory == "Dense":
-            self.hydrosphere = min(self.hydrosphere - 10, 0)
+            self.hydrosphere = max(self.hydrosphere - 10, 0)
             DF = 1.09
             NF = 0.88
         elif self.atmosphericCategory == "Very Dense":
@@ -432,8 +436,18 @@ class GasGiant(World):
         World.__init__(self, "Gas Giant", parentStar)
         self.numSulfurWorlds = 0
 
+    def Generate(self):
+        """ Do Nothing Yet """
+
     def GetNumSulfurWorlds(self):
         return self.numSulfurWorlds
 
     def IncNumSulfurWorlds(self):
         self.numSulfurWorlds = self.numSulfurWorlds + 1
+
+class Belt(World):
+    def __init__(self, parentStar):
+        World.__init__(self, "Belt", parentStar)
+
+    def Generate(self):
+        """ Do Nothing Yet """

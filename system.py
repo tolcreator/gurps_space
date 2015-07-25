@@ -286,14 +286,12 @@ def GetForbiddenZones(parentStar):
     forbiddenZones = []
     if parentStar.GetOrbit():
         innerEdge = parentStar.GetOrbit().GetMinSeparation() / 3
-        forbiddenZones.append( { "in":innerEdge, "out":0.0 } )
+        forbiddenZones.append( { "in":innerEdge, "out":10000 } )
     for orbiter in parentStar.GetOrbiters():
         innerEdge = orbiter.GetMinSeparation() / 3
         outerEdge = orbiter.GetMaxSeparation() * 3
         forbiddenZones.append( { "in":innerEdge, "out":outerEdge } )
     return forbiddenZones
-
-
 
 """ Placements are rough orbits """
 def GeneratePlacements(parentStar, arrangement):
@@ -450,17 +448,52 @@ def GetWorldEccentricity(mod):
     if r == 1:
         r = dice.roll(1, 100)
         upvar = (upvar / 100) * float(r)
-        return rough + upvar
+        ret = rough + upvar
     else:
         r = dice.roll(1, 100)
         downvar = (downvar / 100) * float(r)
-        return rough - downvar
+        ret = rough - downvar
+    return max(ret, 0)
+
+def GenerateMoonType(parentType):
+    r = dice.roll(3, 6)
+    if r <= 11:
+        return "Tiny"
+    elif r <= 14:
+        if parentType == "Gas Giant" or parentType == "Large":
+            return "Small"
+        else:
+            return "Tiny"
+    else:
+        if parentType == "Gas Giant" or parentType == "Large":
+            return "Standard"
+        elif parentType == "Standard":
+            return "Small"
+        else:
+            return "Tiny"
+
+def GenerateTerrestrialMajorMoonOrbitRadius(moonType, planetType, existingOrbit):
+    mod = 0
+    if moonType == "Tiny":
+        if planetType == "Small":
+            mod = 4
+        elif planetType == "Standard":
+            mod = 2
+    elif moonType == "Small":
+        if planetType == "Standard":
+            mod = 4
+        elif planetType == "Large":
+            mod = 2
+    else:
+        mod = 4
+    r = existingOrbit
+    while r == existingOrbit:
+        r = dice.roll(2, 6) + mod
+    return r
 
 def GenerateWorlds(parentStar, worlds):
     arrangement = GenerateGasGiantArrangement(parentStar)
     placements = GeneratePlacements(parentStar, arrangement)
-    print parentStar
-    world.PrintBanner()
     for placement in placements:
         if placement["Type"] == "Tiny" or placement["Type"] == "Small" or placement["Type"] == "Standard" or placement["Type"] == "Large":
             w = world.TerrestrialWorld(placement["Type"], parentStar)
@@ -471,12 +504,53 @@ def GenerateWorlds(parentStar, worlds):
             o = orbit.Orbit(parentStar, w, placement["Radius"], eccentricity)
             parentStar.AddOrbiter(o)
             w.SetOrbit(o)
-            w.Generate()
-            w.Show()
+            w.GenerateBasic()
+            """ Moons """
+            majorMoons = 0
+            minorMoons = 0
+            if placement["Radius"] >= 0.5:
+                mod = 0
+                if placement["Radius"] <= 0.75:
+                    mod = -3
+                elif placement["Radius"] <= 1.5:
+                    mod = -1
+                if placement["Type"] == "Tiny":
+                    mod = mod - 2
+                elif placement["Type"] == "Small":
+                    mod = mod - 1
+                elif placement["Type"] == "Large":
+                    mod = mod + 1
+                majorMoons = max(dice.roll(1, 6) + mod - 4, 0)
+                if majorMoons == 0:
+                    minorMoons = max(dice.roll(1, 6) + mod - 2, 0)
+            existingOrbit = 0
+            for i in range(0, majorMoons):
+                t = GenerateMoonType(placement["Type"])    
+                m = world.TerrestrialWorld(t, parentStar, parentWorld = w)
+                r = GenerateTerrestrialMajorMoonOrbitRadius(t, placement["Type"], existingOrbit)
+                existingOrbit = r
+                radius = r * w.GetDiameter()
+                o = orbit.Orbit(w, m, radius, 0, oType = "Lunar")
+                m.SetOrbit(o)
+                w.AddOrbiter(o)
+                m.GenerateBasic()
+                 
         elif placement["Type"] == "Gas Giant":
-            print "    Gas Giant"
+            w = world.GasGiant(parentStar)
+            mod = 0
+            eccentricity = GetWorldEccentricity(mod)
+            o = orbit.Orbit(parentStar, w, placement["Radius"], eccentricity)
+            w.SetOrbit(o)
+            parentStar.AddOrbiter(o)
+            w.Generate()            
         elif placement["Type"] == "Belt":
-            print "    Belt"
+            w = world.Belt(parentStar)
+            mod = 0
+            eccentricity = GetWorldEccentricity(mod)
+            o = orbit.Orbit(parentStar, w, placement["Radius"], eccentricity)
+            w.SetOrbit(o)
+            parentStar.AddOrbiter(o)
+            w.Generate()            
 
 class System:
     def __init__(self):
@@ -492,17 +566,4 @@ class System:
               
     def __str__(self):
         primary = self.stars[0]
-        ret = primary.__str__()
-        for orbit in primary.GetOrbiters():
-            companion = orbit.GetOrbiter()
-            ret = ret + "\n    "
-            ret = ret + orbit.__str__()
-            ret = ret + " "
-            ret = ret + companion.__str__()
-            for orbit in companion.GetOrbiters():
-                companion = orbit.GetOrbiter()
-                ret = ret + "\n        "
-                ret = ret + orbit.__str__()
-                ret = ret + " "
-                ret = ret + companion.__str__()
-        return ret           
+        return primary.__str__()
