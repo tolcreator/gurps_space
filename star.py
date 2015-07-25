@@ -63,6 +63,12 @@ class Star(body.Body):
     def GetMass(self):
         return self.mass
 
+    def GetLuminosity(self):
+        return self.luminosity
+
+    def GetInitialLuminosity(self):
+        return self.setEntry["lmin"]
+
     def GetStellarEvolutionTableEntry(self):
         for entry in stellarEvolutionTable:
             if self.mass <= entry["mass"]:

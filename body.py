@@ -11,6 +11,9 @@ class Body:
         """ should probably check that orbit.orbiter = self """
         self.orbit = orbit
 
+    def GetOrbit(self):
+        return self.orbit
+
     def AddOrbiter(self, orbit):
         """ should probably check that orbit.orbitee = self """
         self.orbiters.append(orbit)
