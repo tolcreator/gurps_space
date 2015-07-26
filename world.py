@@ -468,7 +468,7 @@ class TerrestrialWorld(World):
         self.atmosphericPressure = GetAtmosphericPressure(self.mainType, self.subType, atmosphericMass, self.gravity)
         self.atmosphericCategory = GetAtmosphericCategory(self.atmosphericPressure)
 
-    def GenerateDetails(self):
+    def GenerateDynamics(self):
         """ Orbital period in days """
         parentLock = False
         lunarLock = False
@@ -501,9 +501,14 @@ class TerrestrialWorld(World):
                     self.SolarLockCorrection()
         else:
             self.rotationalPeriod = GenerateRotationalPeriod(self.mainType, None, tidalEffect)
-        if self.rotationalPeriod > self.orbitalPeriod:
+        if possibleLunarLock and self.rotationalPeriod > potentialRotationalPeriod:
+            lunarLock = True
             self.rotationalPeriod = self.orbitalPeriod
-            """ And have to check again for solar tide lock """
+        elif self.rotationalPeriod > self.orbitalPeriod:
+            parentLock = True
+            self.rotationalPeriod = self.orbitalPeriod
+            if not self.parentWorld:
+                self.SolarLockCorrection()
 
     def SolarLockCorrection(self):
         DF = 1.0
@@ -644,15 +649,25 @@ class GasGiant(World):
         self.diameter = pow(self.mass/self.density, 1.0/3.0)
         self.gravity = self.diameter * self.density 
 
-    def GenerateDetails(self):
-        """ Do nothing yet """
+    def GenerateDynamics(self):
+        self.orbitalPeriod = math.sqrt(pow(self.orbit.GetRadius(), 3) / self.parentStar.GetMass()) * 365.26
+        tide = (0.47 * self.parentStar.GetMass() * self.diameter) / pow(self.orbit.GetRadius(), 3)
+        tidalEffect = (tide * self.parentStar.GetAge()) / self.mass
+        if tidalEffect > 50:
+            parentLock = True
+            self.rotationalPeriod = self.orbitalPeriod
+        else:
+            self.rotationalPeriod = GenerateRotationalPeriod(self.mainType, self.subType, tidalEffect)
+        if self.rotationalPeriod > self.orbitalPeriod:
+            parentLock = True
+            self.rotationalPeriod = self.orbitalPeriod
         
     def ShowBasic(self):
         return self.GetSymbol() + " " + self.subType + " " + self.mainType
 
     def ShowDetails(self):
-        return "----       ----       ----       ----      %- 10.3f %- 10.3f %- 10.3f %- 10.3f  ----      " % \
-            (self.diameter, self.mass, self.density, self.gravity)
+        return "----       ----       ----       ----      %- 10.3f %- 10.3f %- 10.3f %- 10.3f  ----       %-10s %-10s" % \
+            (self.diameter, self.mass, self.density, self.gravity, PrettyPeriod(self.orbitalPeriod), PrettyPeriod(self.rotationalPeriod))
 
     def GetNumSulfurWorlds(self):
         return self.numSulfurWorlds
@@ -673,7 +688,7 @@ class Belt(World):
     def GenerateBasic(self):
         """ Do Nothing Yet """
 
-    def GenerateDetails(self):
+    def GenerateDynamics(self):
         """ Do Nothing Yet """
 
 class Moonlet(World):
@@ -684,5 +699,5 @@ class Moonlet(World):
     def GenerateBasic(self):
         """ Do Nothing Yet """
 
-    def GenerateDetails(self):
+    def GenerateDynamics(self):
         """ Do Nothing Yet """

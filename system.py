@@ -687,11 +687,11 @@ def GenerateWorlds(parentStar, worlds):
 
         """ Now generate details for all world types """
         if w:
-            w.GenerateDetails()
+            w.GenerateDynamics()
             orbiters = w.GetOrbiters()
             for o in orbiters:
                 m = o.GetOrbiter()
-                m.GenerateDetails()
+                m.GenerateDynamics()
 
 class System:
     def __init__(self):
