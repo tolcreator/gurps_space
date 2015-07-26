@@ -334,9 +334,46 @@ def GetAtmosphericCategory(pressure):
         return "Very Dense"
     return "Superdense"
 
+def GenerateSpecialRotationalPeriod(initial):
+    r = dice.roll(3, 6)
+    if r <= 6:
+        return float(initial) / 24
+    d = dice.roll(1, 6)
+    if r <= 7:
+        return d * 2
+    if r <= 8:
+        return d * 5
+    if r <= 9:
+        return d * 10
+    if r <= 10:
+        return d * 20
+    if r <= 11:
+        return d * 50
+    return d * 100
+
+def GenerateRotationalPeriod(mainType, subType, tidalEffect):
+    mod = 0
+    if mainType == "Gas Giant" and subType == "Small":
+        mod = 6
+    elif mainType == "Large":
+        mod = 6
+    elif mainType == "Standard":
+        mod = 10
+    elif mainType == "Small":
+        mod = 14
+    elif mainType == "Tiny":
+        mod = 18
+    mod = mod + int(tidalEffect)
+    r = dice.roll(3, 6)
+    if r >= 16:
+        return GenerateSpecialRotationalPeriod(r + mod)
+    if (r + mod) >= 36:
+        return GenerateSpecialRotationalPeriod(r + mod)
+    return float(r + mod) / 24
+
 def Banner():
-    return "                                                  %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s" % \
-        ("Atmosphere", "Hydro%", "Climate", "Avg Temp", "Diameter", "Mass", "Density", "Gravity", "Pressure")
+    return "                                                  %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s" % \
+        ("Atmosphere", "Hydro%", "Climate", "Avg Temp", "Diameter", "Mass", "Density", "Gravity", "Pressure", "Orbital", "Rotational")
 
 class World(body.Body):
     def __init__(self, mainType, parentStar):
@@ -344,12 +381,23 @@ class World(body.Body):
         self.mainType = mainType
         self.parentStar = parentStar
         self.diameter = 0
+        self.mass = 0
 
     def GetType(self):
         return self.mainType
 
     def GetDiameter(self):
         return self.diameter
+
+    def GetMass(self):
+        return self.mass
+
+def PrettyPeriod(period):
+    if period <= 2.0:
+        return "%2.1f h" % (period * 24)
+    if period <= 730.52:
+        return "%2.1f d" % period
+    return "%2.1f y" % (period / 365.26)
 
 class TerrestrialWorld(World):
     def __init__(self, mainType, parentStar, parentWorld = None):
@@ -360,8 +408,10 @@ class TerrestrialWorld(World):
         return self.GetSymbol() + " " + self.mainType + " " + self.subType
 
     def ShowDetails(self):
-        return "%-10s %-10d %-10s %-10d%- 10.3f %- 10.3f %- 10.3f %- 10.3f %- 10.3f" % \
-            (self.atmosphericCategory, self.hydrosphere, self.climate, self.averageTemperature, self.diameter, self.mass, self.density, self.gravity, self.atmosphericPressure)
+        return "%-10s %-10d %-10s %-10d%- 10.3f %- 10.3f %- 10.3f %- 10.3f %- 10.3f  %-10s %-10s" % \
+            (self.atmosphericCategory, self.hydrosphere, self.climate, self.averageTemperature, \
+             self.diameter, self.mass, self.density, self.gravity, self.atmosphericPressure, \
+             PrettyPeriod(self.orbitalPeriod), PrettyPeriod(self.rotationalPeriod))
 
     def GenerateBasic(self):
         if self.parentWorld:
@@ -400,7 +450,13 @@ class TerrestrialWorld(World):
                 self.subType = "Garden"
      
         self.density = GenerateDensity(self.mainType, self.subType)
-        self.diameter = GenerateDiameter(self.mainType, blackBodyTemperature, self.density)
+        if blackBodyTemperature < 3.0:
+            """ Damn White Dwarves """
+            """ TODO: Maybe use the III temperature instead """
+            originalBlackBodyTemperature = 278 * ( pow(self.parentStar.GetInitialLuminosity(), 0.25) / pow(solarRadius, 0.5) )
+            self.diameter = GenerateDiameter(self.mainType, originalBlackBodyTemperature, self.density)
+        else:     
+            self.diameter = GenerateDiameter(self.mainType, blackBodyTemperature, self.density)
         self.gravity = GetGravity(self.density, self.diameter)
         self.mass = GetWorldMass(self.density, self.diameter)
          
@@ -412,15 +468,44 @@ class TerrestrialWorld(World):
         self.atmosphericPressure = GetAtmosphericPressure(self.mainType, self.subType, atmosphericMass, self.gravity)
         self.atmosphericCategory = GetAtmosphericCategory(self.atmosphericPressure)
 
-        """ Check if tide locked to star """
-        self.solarTideLocked = False
-        if not self.parentWorld:
-            tide = (0.46 * self.parentStar.GetMass() * self.diameter) / pow(solarRadius, 3)
-            if tide >= 50:
-                self.solarTideLocked = True
-                self.TideLockCorrection()
+    def GenerateDetails(self):
+        """ Orbital period in days """
+        parentLock = False
+        lunarLock = False
+        possibleLunarLock = False
+        potentialRotationalPeriod = 0
+        if self.parentWorld:
+            self.orbitalPeriod = math.sqrt(pow(self.orbit.GetRadius(), 3) / self.parentWorld.GetMass()) * 0.0588
+            tide = (17800000 * self.parentWorld.GetMass() * self.diameter) / pow(self.orbit.GetRadius(), 3)
+            if tide > 50:
+                parentLock = True
+        else:
+            self.orbitalPeriod = math.sqrt(pow(self.orbit.GetRadius(), 3) / self.parentStar.GetMass()) * 365.26
+            tide = (0.47 * self.parentStar.GetMass() * self.diameter) / pow(self.orbit.GetRadius(), 3)
+            for o in self.orbiters:
+                m = o.GetOrbiter()
+                if not m.GetType() == "Moonlet":
+                    if not possibleLunarLock:            
+                        possibleLunarLock = True
+                        potentialRotationalPeriod = math.sqrt(pow(o.GetRadius(), 3) / self.GetMass()) * 0.0588
+                    tide = tide + (17800000 * m.GetMass() * self.diameter) / pow(o.GetRadius(), 3)
+        tidalEffect = (tide * self.parentStar.GetAge()) / self.mass
+        if tidalEffect > 50:
+            if possibleLunarLock:
+                lunarLock = True
+                self.rotationalPeriod = potentialRotationalPeriod
+            else:
+                parentLock = True
+                self.rotationalPeriod = self.orbitalPeriod
+                if not self.parentWorld:
+                    self.SolarLockCorrection()
+        else:
+            self.rotationalPeriod = GenerateRotationalPeriod(self.mainType, None, tidalEffect)
+        if self.rotationalPeriod > self.orbitalPeriod:
+            self.rotationalPeriod = self.orbitalPeriod
+            """ And have to check again for solar tide lock """
 
-    def TideLockCorrection(self):
+    def SolarLockCorrection(self):
         DF = 1.0
         NF = 1.0
         p = self.atmosphericPressure
@@ -558,12 +643,16 @@ class GasGiant(World):
         self.density = massAndDensity["Density"]
         self.diameter = pow(self.mass/self.density, 1.0/3.0)
         self.gravity = self.diameter * self.density 
+
+    def GenerateDetails(self):
+        """ Do nothing yet """
         
     def ShowBasic(self):
         return self.GetSymbol() + " " + self.subType + " " + self.mainType
 
     def ShowDetails(self):
-        return ""
+        return "----       ----       ----       ----      %- 10.3f %- 10.3f %- 10.3f %- 10.3f  ----      " % \
+            (self.diameter, self.mass, self.density, self.gravity)
 
     def GetNumSulfurWorlds(self):
         return self.numSulfurWorlds
@@ -581,7 +670,10 @@ class Belt(World):
     def __init__(self, parentStar):
         World.__init__(self, "Belt", parentStar)
 
-    def Generate(self):
+    def GenerateBasic(self):
+        """ Do Nothing Yet """
+
+    def GenerateDetails(self):
         """ Do Nothing Yet """
 
 class Moonlet(World):
@@ -589,5 +681,8 @@ class Moonlet(World):
         World.__init__(self, "Moonlet", parentStar)
         self.parentWorld = parentWorld
 
-    def Generate(self):
+    def GenerateBasic(self):
+        """ Do Nothing Yet """
+
+    def GenerateDetails(self):
         """ Do Nothing Yet """

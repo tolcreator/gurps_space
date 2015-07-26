@@ -622,7 +622,7 @@ def GenerateWorlds(parentStar, worlds):
                 o = orbit.Orbit(w, m, radius, 0, oType = "Lunar")
                 m.SetOrbit(o)
                 w.AddOrbiter(o)
-                m.Generate()
+                m.GenerateBasic()
                  
         elif placement["Type"] == "Gas Giant":
             w = world.GasGiant(parentStar)
@@ -642,7 +642,7 @@ def GenerateWorlds(parentStar, worlds):
                 o = orbit.Orbit(w, m, radius, 0, oType = "Lunar")
                 m.SetOrbit(o)
                 w.AddOrbiter(o)
-                m.Generate()
+                m.GenerateBasic()
             """ Major Moons """
             if placement["Radius"] <= 0.1:
                 majorMoons = 0
@@ -671,7 +671,7 @@ def GenerateWorlds(parentStar, worlds):
                 o = orbit.Orbit(w, m, radius, 0, oType = "Lunar")
                 m.SetOrbit(o)
                 w.AddOrbiter(o)
-                m.Generate()
+                m.GenerateBasic()
 
         elif placement["Type"] == "Belt":
             w = world.Belt(parentStar)
@@ -680,7 +680,18 @@ def GenerateWorlds(parentStar, worlds):
             o = orbit.Orbit(parentStar, w, placement["Radius"], eccentricity)
             w.SetOrbit(o)
             parentStar.AddOrbiter(o)
-            w.Generate()            
+            w.GenerateBasic()            
+        else:
+            """ An Empty orbit """
+            w = None
+
+        """ Now generate details for all world types """
+        if w:
+            w.GenerateDetails()
+            orbiters = w.GetOrbiters()
+            for o in orbiters:
+                m = o.GetOrbiter()
+                m.GenerateDetails()
 
 class System:
     def __init__(self):
