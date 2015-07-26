@@ -334,6 +334,28 @@ def GetAtmosphericCategory(pressure):
         return "Very Dense"
     return "Superdense"
 
+def GenerateAxialTilt():
+    r = dice.roll(3, 6)
+    d = dice.roll(2, 6) - 2
+    if r <= 6:
+        return d
+    if r <= 9:
+        return 10 + d
+    if r <= 12:
+        return 20 + d
+    if r <= 14:
+        return 30 + d
+    if r <= 16:
+        return 40 + d
+    r = dice.roll(1, 6)
+    if r <= 2:
+        return 50 + d
+    if r <= 4:
+        return 60 + d
+    if r <= 5:
+        return 70 + d
+    return 80 + d
+
 def GenerateSpecialRotationalPeriod(initial):
     r = dice.roll(3, 6)
     if r <= 6:
@@ -372,8 +394,8 @@ def GenerateRotationalPeriod(mainType, subType, tidalEffect):
     return float(r + mod) / 24
 
 def Banner():
-    return "                                                  %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s" % \
-        ("Atmosphere", "Hydro%", "Climate", "Avg Temp", "Diameter", "Mass", "Density", "Gravity", "Pressure", "Orbital", "Rotational")
+    return "                                                  %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s" % \
+        ("Atmosphere", "Hydro%", "Climate", "Avg Temp", "Diameter", "Mass", "Density", "Gravity", "Pressure", "Orbital", "Rotational", "Axial Tilt")
 
 class World(body.Body):
     def __init__(self, mainType, parentStar):
@@ -392,6 +414,15 @@ class World(body.Body):
     def GetMass(self):
         return self.mass
 
+    def GenerateBasic(self):
+        """ Do Nothing Yet """
+
+    def GenerateDynamics(self):
+        """ Do Nothing Yet """
+
+    def GenerateDetails(self):
+        """ Do Nothing Yet """
+
 def PrettyPeriod(period):
     if period <= 2.0:
         return "%2.1f h" % (period * 24)
@@ -408,10 +439,10 @@ class TerrestrialWorld(World):
         return self.GetSymbol() + " " + self.mainType + " " + self.subType
 
     def ShowDetails(self):
-        return "%-10s %-10d %-10s %-10d%- 10.3f %- 10.3f %- 10.3f %- 10.3f %- 10.3f  %-10s %-10s" % \
+        return "%-10s %-10d %-10s %-10d%- 10.3f %- 10.3f %- 10.3f %- 10.3f %- 10.3f  %-10s %-10s %- 10d" % \
             (self.atmosphericCategory, self.hydrosphere, self.climate, self.averageTemperature, \
              self.diameter, self.mass, self.density, self.gravity, self.atmosphericPressure, \
-             PrettyPeriod(self.orbitalPeriod), PrettyPeriod(self.rotationalPeriod))
+             PrettyPeriod(self.orbitalPeriod), PrettyPeriod(self.rotationalPeriod), self.axialTilt)
 
     def GenerateBasic(self):
         if self.parentWorld:
@@ -509,6 +540,7 @@ class TerrestrialWorld(World):
             self.rotationalPeriod = self.orbitalPeriod
             if not self.parentWorld:
                 self.SolarLockCorrection()
+        self.axialTilt = GenerateAxialTilt()
 
     def SolarLockCorrection(self):
         DF = 1.0
@@ -661,13 +693,14 @@ class GasGiant(World):
         if self.rotationalPeriod > self.orbitalPeriod:
             parentLock = True
             self.rotationalPeriod = self.orbitalPeriod
+        self.axialTilt = GenerateAxialTilt()
         
     def ShowBasic(self):
         return self.GetSymbol() + " " + self.subType + " " + self.mainType
 
     def ShowDetails(self):
-        return "----       ----       ----       ----      %- 10.3f %- 10.3f %- 10.3f %- 10.3f  ----       %-10s %-10s" % \
-            (self.diameter, self.mass, self.density, self.gravity, PrettyPeriod(self.orbitalPeriod), PrettyPeriod(self.rotationalPeriod))
+        return "----       ----       ----       ----      %- 10.3f %- 10.3f %- 10.3f %- 10.3f  ----       %-10s %-10s %- 10d" % \
+            (self.diameter, self.mass, self.density, self.gravity, PrettyPeriod(self.orbitalPeriod), PrettyPeriod(self.rotationalPeriod), self.axialTilt)
 
     def GetNumSulfurWorlds(self):
         return self.numSulfurWorlds
@@ -685,19 +718,7 @@ class Belt(World):
     def __init__(self, parentStar):
         World.__init__(self, "Belt", parentStar)
 
-    def GenerateBasic(self):
-        """ Do Nothing Yet """
-
-    def GenerateDynamics(self):
-        """ Do Nothing Yet """
-
 class Moonlet(World):
     def __init__(self, parentStar, parentWorld):
         World.__init__(self, "Moonlet", parentStar)
         self.parentWorld = parentWorld
-
-    def GenerateBasic(self):
-        """ Do Nothing Yet """
-
-    def GenerateDynamics(self):
-        """ Do Nothing Yet """

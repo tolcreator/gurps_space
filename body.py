@@ -57,5 +57,5 @@ class Body:
             else:
                 moonlets = moonlets + 1
         if moonlets:
-            ret = ret + "\n                     " + indent + "| " + "%d Moonlets" % moonlets
+            ret = ret + "\n                     " + indent + "| " + ". %d Moonlets" % moonlets
         return ret
