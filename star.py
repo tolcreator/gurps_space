@@ -233,3 +233,6 @@ class Star(body.Body):
         if self.temperature == 0:
             return 0
         return (155000 * math.sqrt(self.luminosity)) / (math.pow(self.temperature, 2))
+    
+    def GetSymbol(self):
+        return "*"

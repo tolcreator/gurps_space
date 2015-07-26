@@ -20,8 +20,14 @@ class Body:
     def GetOrbiters(self):
         return self.orbiters
 
-    def Show(self):
-        return self.GetType()
+    def ShowBasic(self):
+        return self.GetSymbol() + " " + self.GetType()
+
+    def ShowDetails(self):
+        return ""
+
+    def GetSymbol(self):
+        return "."
 
     def GetType(self):
         return "Unknown"
@@ -30,20 +36,26 @@ class Body:
         if self.orbit:
             indent = self.orbit.GetOrbitee().GetIndent()
             if indent:
-                return "    " + indent
+                return "| " + indent
             else:
-                return "   "
-        return None
+                return "| "
+        return ""
 
     def __str__(self):
         indent = self.GetIndent()
-        if indent:
-            ret = indent + self.Show()
-        else:
-            ret = self.Show()
+        basic = indent + self.ShowBasic()
+        ret = "%-28s " % basic
+        ret = ret + self.ShowDetails()
+        moonlets = 0
         for o in self.orbiters:
             c = o.GetOrbiter()
-            ret = ret + "\n"
-            ret = ret + o.__str__()
-            ret = ret + c.__str__()
+            if not c.GetType() == "Moonlet":
+                ret = ret + "\n"
+                ret = ret + o.__str__()
+                ret = ret + " "
+                ret = ret + c.__str__()
+            else:
+                moonlets = moonlets + 1
+        if moonlets:
+            ret = ret + "\n                     " + indent + "| " + "%d Moonlets" % moonlets
         return ret

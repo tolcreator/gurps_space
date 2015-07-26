@@ -334,8 +334,9 @@ def GetAtmosphericCategory(pressure):
         return "Very Dense"
     return "Superdense"
 
-def PrintBanner():
-    print "    %-10s %-10s %-10s %-10s %-10s %-10s %-10s Locked" % ("Orbit", "Type", "Subtype", "Atmosphere", "Climate", "Gravity", "Hydro%")
+def Banner():
+    return "                                                  %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s" % \
+        ("Atmosphere", "Hydro%", "Climate", "Avg Temp", "Diameter", "Mass", "Density", "Gravity", "Pressure")
 
 class World(body.Body):
     def __init__(self, mainType, parentStar):
@@ -355,12 +356,12 @@ class TerrestrialWorld(World):
         World.__init__(self, mainType, parentStar)
         self.parentWorld = parentWorld
 
-    def Show(self):
-        if self.solarTideLocked:
-            locked = "Locked"
-        else:
-            locked = ""
-        return "%-10s %-10s %-10s %-10s %- 10.3f %- 10d %s" % (self.mainType, self.subType, self.atmosphericCategory, self.climate, self.gravity, self.hydrosphere, locked)
+    def ShowBasic(self):
+        return self.GetSymbol() + " " + self.mainType + " " + self.subType
+
+    def ShowDetails(self):
+        return "%-10s %-10d %-10s %-10d%- 10.3f %- 10.3f %- 10.3f %- 10.3f %- 10.3f" % \
+            (self.atmosphericCategory, self.hydrosphere, self.climate, self.averageTemperature, self.diameter, self.mass, self.density, self.gravity, self.atmosphericPressure)
 
     def GenerateBasic(self):
         if self.parentWorld:
@@ -437,6 +438,8 @@ class TerrestrialWorld(World):
             p = p - 0.01
             p = p / 49
             self.atmosphericPressure = p
+            if self.subType == "Ocean" or self.subType == "Garden":
+                self.subType = "Chthonian"
         elif self.atmosphericCategory == "Thin":
             self.atmosphericCategory = "Very Thin"
             self.hydrosphere = max(self.hydrosphere - 50, 0)
@@ -466,6 +469,9 @@ class TerrestrialWorld(World):
         self.avTempNightFace = self.averageTemperature * NF
         self.dayFaceClimate = GetClimate(self.avTempDayFace)
         self.nightFaceClimate = GetClimate(self.avTempNightFace)            
+
+    def GetSymbol(self):
+        return "o"
        
 def GenerateGasGiantSubtype(mod):
     r = dice.roll(3, 6) + mod
@@ -551,11 +557,13 @@ class GasGiant(World):
         self.mass = massAndDensity["Mass"]
         self.density = massAndDensity["Density"]
         self.diameter = pow(self.mass/self.density, 1.0/3.0)
-        self.gravity = self.diameter * self.density
+        self.gravity = self.diameter * self.density 
         
-        
-    def Show(self):
-        return self.subType + " " + self.mainType
+    def ShowBasic(self):
+        return self.GetSymbol() + " " + self.subType + " " + self.mainType
+
+    def ShowDetails(self):
+        return ""
 
     def GetNumSulfurWorlds(self):
         return self.numSulfurWorlds
@@ -565,6 +573,9 @@ class GasGiant(World):
 
     def SetNumInnerMoons(self, n):
         self.numInnerMoons = n
+
+    def GetSymbol(self):
+        return "O"
 
 class Belt(World):
     def __init__(self, parentStar):

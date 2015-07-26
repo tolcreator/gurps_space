@@ -696,4 +696,4 @@ class System:
               
     def __str__(self):
         primary = self.stars[0]
-        return primary.__str__()
+        return world.Banner() + "\n                     " + primary.__str__()
