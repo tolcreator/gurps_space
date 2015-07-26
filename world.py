@@ -394,8 +394,11 @@ def GenerateRotationalPeriod(mainType, subType, tidalEffect):
     return float(r + mod) / 24
 
 def Banner():
-    return "                                                  %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s" % \
-        ("Atmosphere", "Hydro%", "Climate", "Avg Temp", "Diameter", "Mass", "Density", "Gravity", "Pressure", "Orbital", "Rotational", "Axial Tilt")
+    return "                                                  %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s" % \
+        ("Atmosphere", "Hydro%", "Climate", "Avg Temp", \
+         "Diameter", "Mass", "Density", "Gravity", "Pressure", \
+         "Orbital", "Rotational", "Axial Tilt", \
+         "Vulcanism", "Tectonics")
 
 class World(body.Body):
     def __init__(self, mainType, parentStar):
@@ -439,10 +442,11 @@ class TerrestrialWorld(World):
         return self.GetSymbol() + " " + self.mainType + " " + self.subType
 
     def ShowDetails(self):
-        return "%-10s %-10d %-10s %-10d%- 10.3f %- 10.3f %- 10.3f %- 10.3f %- 10.3f  %-10s %-10s %- 10d" % \
+        return "%-10s %-10d %-10s %-10d%- 10.3f %- 10.3f %- 10.3f %- 10.3f %- 10.3f  %-10s %-10s %- 10d %-10s %-10s" % \
             (self.atmosphericCategory, self.hydrosphere, self.climate, self.averageTemperature, \
              self.diameter, self.mass, self.density, self.gravity, self.atmosphericPressure, \
-             PrettyPeriod(self.orbitalPeriod), PrettyPeriod(self.rotationalPeriod), self.axialTilt)
+             PrettyPeriod(self.orbitalPeriod), PrettyPeriod(self.rotationalPeriod), self.axialTilt, \
+             self.vulcanism, self.tectonics)
 
     def GenerateBasic(self):
         if self.parentWorld:
@@ -506,8 +510,8 @@ class TerrestrialWorld(World):
         possibleLunarLock = False
         potentialRotationalPeriod = 0
         if self.parentWorld:
-            self.orbitalPeriod = math.sqrt(pow(self.orbit.GetRadius(), 3) / self.parentWorld.GetMass()) * 0.0588
-            tide = (17800000 * self.parentWorld.GetMass() * self.diameter) / pow(self.orbit.GetRadius(), 3)
+            self.orbitalPeriod = math.sqrt(pow(self.orbit.GetRadius(), 3) / self.parentWorld.GetMass()) * 0.166
+            tide = (2230000 * self.parentWorld.GetMass() * self.diameter) / pow(self.orbit.GetRadius(), 3)
             if tide > 50:
                 parentLock = True
         else:
@@ -518,8 +522,8 @@ class TerrestrialWorld(World):
                 if not m.GetType() == "Moonlet":
                     if not possibleLunarLock:            
                         possibleLunarLock = True
-                        potentialRotationalPeriod = math.sqrt(pow(o.GetRadius(), 3) / self.GetMass()) * 0.0588
-                    tide = tide + (17800000 * m.GetMass() * self.diameter) / pow(o.GetRadius(), 3)
+                        potentialRotationalPeriod = math.sqrt(pow(o.GetRadius(), 3) / self.GetMass()) * 0.166
+                    tide = tide + (2230000 * m.GetMass() * self.diameter) / pow(o.GetRadius(), 3)
         tidalEffect = (tide * self.parentStar.GetAge()) / self.mass
         if tidalEffect > 50:
             if possibleLunarLock:
@@ -591,6 +595,77 @@ class TerrestrialWorld(World):
         self.avTempNightFace = self.averageTemperature * NF
         self.dayFaceClimate = GetClimate(self.avTempDayFace)
         self.nightFaceClimate = GetClimate(self.avTempNightFace)            
+
+    def GetNumMajorMoons(self):
+        majorMoons = 0
+        for o in self.orbiters:
+            m = o.GetOrbiter()
+            if not m.GetType() == "Moonlet":
+                majorMoons = majorMoons + 1
+        return majorMoons
+
+    def GenerateVulcanism(self):
+        mod = int((self.gravity / self.parentStar.GetAge()) * 40)
+        majorMoons = self.GetNumMajorMoons()
+        if majorMoons == 1:
+            mod = mod + 5
+        elif majorMoons > 1:
+            mod = mod + 10
+        if self.subType == "Sulfur":
+            mod = mod + 60
+        elif self.parentWorld:
+            if self.parentWorld.GetType == "Gas Giant":
+                mod = mod + 5 
+        r = dice.roll(3, 6) + mod
+        if r <= 16:
+            self.vulcanism =  "None"
+        elif r <= 20:
+            self.vulcanism = "Light"
+        elif r <= 26:
+            self.vulcanism = "Moderate"
+        elif r <= 70:
+            self.vulcanism = "Heavy"
+        else:
+            self.vulcanism = "Extreme"
+        """ TODO figure out if atmosphere is marginal """
+
+    def GenerateTectonicActivity(self):
+        if self.mainType == "Tiny" or self.mainType == "Small":
+            self.tectonics = "None"
+            return
+        mod = 0
+        if self.vulcanism == "None":
+            mod = mod - 8
+        elif self.vulcanism == "Light":
+            mod = mod - 4
+        elif self.vulcanism == "Heavy":
+            mod = mod + 4
+        elif self.vulcanism == "Extreme":
+            mod = mod + 8
+        if self.hydrosphere == 0:
+            mod = mod - 4
+        elif self.hydrosphere <= 50:
+            mod = mod - 2
+        majorMoons = self.GetNumMajorMoons()
+        if majorMoons == 1:
+            mod = mod + 2
+        elif majorMoons > 1:
+            mod = mod + 4
+        r = dice.roll(3, 6) + mod
+        if r <= 6:
+            self.tectonics = "None"
+        elif r <= 10:
+            self.tectonics = "Light"
+        elif r <= 14:
+            self.tectonics = "Moderate"
+        elif r <= 18:
+            self.tectonics = "Heavy"
+        else:
+            self.tectonics = "Extreme"
+
+    def GenerateDetails(self):
+        self.GenerateVulcanism()
+        self.GenerateTectonicActivity()
 
     def GetSymbol(self):
         return "o"
@@ -699,7 +774,7 @@ class GasGiant(World):
         return self.GetSymbol() + " " + self.subType + " " + self.mainType
 
     def ShowDetails(self):
-        return "----       ----       ----       ----      %- 10.3f %- 10.3f %- 10.3f %- 10.3f  ----       %-10s %-10s %- 10d" % \
+        return "----       ----       ----       ----      %- 10.3f %- 10.3f %- 10.3f %- 10.3f  ----       %-10s %-10s %- 10d ----       ----      " % \
             (self.diameter, self.mass, self.density, self.gravity, PrettyPeriod(self.orbitalPeriod), PrettyPeriod(self.rotationalPeriod), self.axialTilt)
 
     def GetNumSulfurWorlds(self):
