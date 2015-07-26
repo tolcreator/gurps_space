@@ -605,7 +605,10 @@ class TerrestrialWorld(World):
         return majorMoons
 
     def GenerateVulcanism(self):
-        mod = int((self.gravity / self.parentStar.GetAge()) * 40)
+        if self.parentStar.GetAge() == 0:
+            mod = 40
+        else:
+            mod = int((self.gravity / self.parentStar.GetAge()) * 40)
         majorMoons = self.GetNumMajorMoons()
         if majorMoons == 1:
             mod = mod + 5
