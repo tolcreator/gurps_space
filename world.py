@@ -394,11 +394,11 @@ def GenerateRotationalPeriod(mainType, subType, tidalEffect):
     return float(r + mod) / 24
 
 def Banner():
-    return "                                                  %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s" % \
+    return "                                                  %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-3s %-3s %-3s" % \
         ("Atmosphere", "Hydro%", "Climate", "Avg Temp", \
          "Diameter", "Mass", "Density", "Gravity", "Pressure", \
          "Orbital", "Rotational", "Axial Tilt", \
-         "Vulcanism", "Tectonics")
+         "Vulcanism", "Tectonics", "Hab", "Res", "Aff")
 
 class World(body.Body):
     def __init__(self, mainType, parentStar):
@@ -425,6 +425,12 @@ class World(body.Body):
 
     def GenerateDetails(self):
         """ Do Nothing Yet """
+    
+    def GetAffinity(self):
+        return 0
+
+    def GetIsAMoon(self):
+        return False
 
 def PrettyPeriod(period):
     if period <= 2.0:
@@ -442,11 +448,11 @@ class TerrestrialWorld(World):
         return self.GetSymbol() + " " + self.mainType + " " + self.subType
 
     def ShowDetails(self):
-        return "%-10s %-10d %-10s %-10d%- 10.3f %- 10.3f %- 10.3f %- 10.3f %- 10.3f  %-10s %-10s %- 10d %-10s %-10s" % \
+        return "%-10s %-10d %-10s %-10d%- 10.3f %- 10.3f %- 10.3f %- 10.3f %- 10.3f  %-10s %-10s %- 10d %-10s %-10s %-3d %-3d %-3d" % \
             (self.atmosphericCategory, self.hydrosphere, self.climate, self.averageTemperature, \
              self.diameter, self.mass, self.density, self.gravity, self.atmosphericPressure, \
              PrettyPeriod(self.orbitalPeriod), PrettyPeriod(self.rotationalPeriod), self.axialTilt, \
-             self.vulcanism, self.tectonics)
+             self.vulcanism, self.tectonics, self.habitability, self.resourceValue, self.affinity)
 
     def GenerateBasic(self):
         if self.parentWorld:
@@ -550,8 +556,8 @@ class TerrestrialWorld(World):
         DF = 1.0
         NF = 1.0
         p = self.atmosphericPressure
-        if self.atmosphericCategory == "None" or self.atmosphericCategory == "Trace":
-            self.atmosphericCategory = "None"
+        if self.atmosphericCategory == "Vacuum" or self.atmosphericCategory == "Trace":
+            self.atmosphericCategory = "Vacuum"
             self.hydrosphere = 0
             DF = 1.2
             NF = 0.1
@@ -666,12 +672,222 @@ class TerrestrialWorld(World):
         else:
             self.tectonics = "Extreme"
 
+    def GenerateMarginalComponents(self):
+        self.atmosphericComposition.append("Marginal")
+        r = dice.roll(3, 6)
+        if r <= 3:
+            self.atmosphericComposition.append("Flourine")
+            self.atmosphericComposition.append("Highly Toxic")
+            return
+        if r <= 4:
+            self.atmosphericComposition.append("Chlorine")
+            self.atmosphericComposition.append("Highly Toxic")
+            return
+        if r <= 6:
+            self.atmosphericComposition.append("Sulfur Compounds")
+            self.atmosphericComposition.append("Mildly Toxic")
+            return
+        if r <= 7:
+            self.atmosphericComposition.append("Nitrogen Compounds")
+            self.atmosphericComposition.append("Mildly Toxic")
+            return
+        if r <= 9:
+            self.atmosphericComposition.append("Organic Toxins")
+            self.atmosphericComposition.append("Mildly Toxic")
+            return
+        if r <= 11:
+            self.atmosphericComposition.append("Low Oxygen")
+            return
+        if r <= 13:
+            self.atmosphericComposition.append("Pollutants")
+            self.atmosphericComposition.append("Mildly Toxic")
+            return
+        if r <= 14:
+            self.atmosphericComposition.append("High Carbon Dioxide")
+            self.atmosphericComposition.append("Mildly Toxic")
+            return
+        if r <= 16:
+            self.atmosphericComposition.append("High Oxygen")
+            self.atmosphericComposition.append("Mildly Toxic")
+            return
+        self.atmosphericComposition.append("Inert Gasses")
+        return
+
+    def GenerateVolcanicPollutants(self):
+        r = dice.roll(3, 6)
+        target = 0
+        if self.vulcanism == "Heavy":
+            target = 8
+        if self.vulcanism == "Extreme":
+            target = 14
+        if r <= target:
+            self.atmosphericComposition.append("Marginal")
+            r = dice.roll(1, 6)
+            if r <= 3:
+                self.atmosphericComposition.append("Pollutants")
+                self.atmosphericComposition.append("Mildly Toxic")
+            else:
+                self.atmosphericComposition.append("Sulfur Compounds")
+                self.atmosphericComposition.append("Mildly Toxic")
+
+    def GenerateAtmosphericComposition(self):
+        self.atmosphericComposition = []
+        if self.atmosphericCategory == "Vacuum" or self.atmosphericCategory == "Trace":
+            self.atmosphericComposition.append("None")
+            return
+
+        if self.mainType == "Small" and self.subType == "Ice":
+            r = dice.roll(3, 6)
+            if r <= 15:
+                self.atmosphericComposition.append("Suffocating")
+                self.atmosphericComposition.append("Mildly Toxic")
+                return
+            else:
+                self.atmosphericComposition.append("Suffocating")
+                self.atmosphericComposition.append("Highly Toxic")
+                return
+        if self.mainType == "Standard":
+            if self.subType == "Ammonia" or self.subType == "Greenhouse":
+                self.atmosphericComposition.append("Suffocating")
+                self.atmosphericComposition.append("Lethally Toxic")
+                self.atmosphericComposition.append("Corrosive")
+                return
+            if self.subType == "Ice" or self.subType == "Ocean":
+                r = dice.roll(3, 6)
+                if r <= 12:
+                    self.atmosphericComposition.append("Suffocating")
+                    return
+                else:               
+                    self.atmosphericComposition.append("Suffocating")
+                    self.atmosphericComposition.append("Mildly Toxic")
+                    return
+            if self.subType == "Garden":
+                r = dice.roll(3, 6)
+                if r <= 11:
+                    self.atmosphericComposition.append("Breatheable")
+                    self.GenerateVolcanicPollutants()
+                    return
+                else:
+                    self.atmosphericComposition.append("Breatheable")
+                    self.GenerateMarginalComponents()
+                    return
+        if self.mainType == "Large":
+            if self.subType == "Ammonia" or self.subType == "Greenhouse":        
+                self.atmosphericComposition.append("Suffocating")
+                self.atmosphericComposition.append("Lethallly Toxic")
+                self.atmosphericComposition.append("Corrosive")
+                return
+            if self.subType == "Ice" or self.subType == "Ocean" or self.subType == "Hadean":
+                self.atmosphericComposition.append("Suffocating")
+                self.atmosphericComposition.append("Highly Toxic")
+                return
+            if self.subType == "Garden":
+                r = dice.roll(3, 6)
+                if r <= 11:
+                    self.atmosphericComposition.append("Breatheable")
+                    self.GenerateVolcanicPollutants()
+                    return
+                else:
+                    self.atmosphericComposition.append("Breatheable")
+                    self.GenerateMarginalComponents()
+                    return
+        print "Shouldn't get here %s %s %d" % (self.mainType, self.subType, self.averageTemperature)           
+
+    def GenerateResourceValue(self):
+        mod = 0
+        if self.vulcanism == "None":
+            mod = -2
+        elif self.vulcanism == "Light":
+            mod = -1
+        elif self.vulcanism == "Heavy":
+            mod = 1
+        elif self.vulcanism == "Extreme":
+            mod = 2
+        r = dice.roll(3, 6) + mod
+        if r <= 2:
+            self.overallValue = "Scant"
+            self.resourceValue = -3
+        elif r <= 4:
+            self.overallValue = "Very Poor"
+            self.resourceValue = -2
+        elif r <= 7:
+            self.overallValue = "Poor"
+            self.resourceValue = -1
+        elif r <= 13:
+            self.overallValue = "Average"
+            self.resourceValue = 0
+        elif r <= 16:
+            self.overallValue = "Abundant"
+            self.resourceValue = 1
+        elif r <= 18:
+            self.overallValue = "Very Abundant"
+            self.resourceValue = 2
+        else:
+            self.overallValue = "Rich"
+            self.resourceValue = 3
+
+    def GetHabitabilityAndAffinity(self):
+        self.habitability = 0
+        """ Vulcanism and Tectonics """
+        if self.vulcanism == "Heavy":
+            self.habitability = self.habitability - 1
+        elif self.vulcanism == "Extreme":
+            self.habitability = self.habitability - 2
+        if self.tectonics == "Heavy":
+            self.habitability = self.habitability - 1
+        elif self.tectonics == "Extreme":
+            self.habitability = self.habitability - 2
+
+        """ Atmosphere """
+        if "Breatheable" in self.atmosphericComposition:
+            if self.atmosphericCategory == "Very Thin":
+                self.habitability = self.habitability + 1
+            elif self.atmosphericCategory == "Thin":
+                self.habitability = self.habitability + 2
+            elif self.atmosphericCategory == "Standard" or self.atmosphericCategory == "Dense":
+                self.habitability = self.habitability + 3
+            elif self.atmosphericCategory == "Very Dense" or self.atmosphericCategory == "Superdense":
+                self.habitability = self.habitability + 2
+            if "Marginal" not in self.atmosphericComposition:
+                self.habitability = self.habitability + 1
+            if self.climate == "Cold" or self.climate == "Hot":
+                 self.habitability = self.habitability + 1
+            elif self.climate == "Chilly" or self.climate == "Cool" or self.climate == "Normal" or self.climate == "Warm" or self.climate == "Tropical":
+                 self.habitability = self.habitability + 2
+        elif not self.atmosphericCategory == "Vaccum" and not self.atmosphericCategory == "Trace":
+            if "Corrosive" in self.atmosphericComposition:
+                self.habitability = self.habitability - 2
+            elif "Mildly Toxic" in self.atmosphericComposition or "Highly Toxic" in self.atmosphericComposition or "Lethally Toxic" in self.atmosphericComposition:
+                self.habitability = self.habitability - 1
+
+        """ Hydrosphere """
+        if self.hydrosphere > 1:
+            if self.hydrosphere <= 59:
+                self.habitability = self.habitability + 1
+            elif self.hydrosphere <= 90:
+                self.habitability = self.habitability + 2
+            elif self.hydrosphere <= 90:
+                self.habitability = self.habitability + 1
+        
+        self.affinity = self.habitability + self.resourceValue        
+
     def GenerateDetails(self):
         self.GenerateVulcanism()
         self.GenerateTectonicActivity()
+        self.GenerateAtmosphericComposition()
+        self.GenerateResourceValue()
+        self.GetHabitabilityAndAffinity()
 
     def GetSymbol(self):
         return "o"
+
+    def GetAffinity(self):
+        return self.affinity
+
+    def GetIsAMoon(self):
+        if self.parentWorld:
+            return True
+        return False
        
 def GenerateGasGiantSubtype(mod):
     r = dice.roll(3, 6) + mod
@@ -792,11 +1008,64 @@ class GasGiant(World):
     def GetSymbol(self):
         return "O"
 
+    def GetAffinity(self):
+        return -10
+
 class Belt(World):
     def __init__(self, parentStar):
         World.__init__(self, "Belt", parentStar)
+
+    def GenerateDetails(self):
+        r = dice.roll(3, 6)
+        if r <= 3:
+            self.overallValue = "Worthless"
+            self.resourceValue = -5
+        elif r <= 4:
+            self.overallValue = "Very Scant"
+            self.resourceValue = -4
+        elif r <= 5:
+            self.overallValue = "Scant"
+            self.resourceValue = -3
+        elif r <= 7:
+            self.overallValue = "Very Poor"
+            self.resourceValue = -2
+        elif r <= 9:
+            self.overallValue = "Poor"
+            self.resourceValue = -1
+        elif r <= 11:
+            self.overallValue = "Average"
+            self.resourceValue = 0
+        elif r <= 13:
+            self.overallValue = "Abundant"
+            self.resourceValue = 1
+        elif r <= 15:
+            self.overallValue = "Very Abundant"
+            self.resourceValue = 2
+        elif r <= 16:
+            self.overallValue = "Rich"
+            self.resourceValue = 3
+        elif r <= 17:
+            self.overallValue = "Very Rich"
+            self.resourceValue = 4
+        else:
+            self.overallValue = "Motherlode"
+            self.resourceValue = 5
+
+        self.habitability = 0
+        self.affinity = self.resourceValue
+
+    def GetAffinity(self):
+        return self.affinity
+
+    def ShowDetails(self):
+        return "Vacuum     ----       ----       ----       ----       ----       ----       ----       ----       ----       ----       ----       ----       ----       %-3d %-3d %-3d" % \
+             (self.habitability, self.resourceValue, self.affinity)
+
 
 class Moonlet(World):
     def __init__(self, parentStar, parentWorld):
         World.__init__(self, "Moonlet", parentStar)
         self.parentWorld = parentWorld
+
+    def GetIsAMoon(self):
+        return True
