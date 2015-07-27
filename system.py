@@ -1,6 +1,10 @@
 import dice
 import star
 import world
+import planet
+import gasgiant
+import moonlet
+import belt
 import orbit
 import math
 
@@ -67,6 +71,32 @@ def GeneratePrimaryMass():
     f = dice.roll(3, 6)
     s = dice.roll(3, 6)
     return stellarMassTable[f][s]
+
+def GenerateBrownDwarfMass(primaryMass):
+    """ i.e. there is no primary """
+    if primaryMass == 0:
+        primaryMass = 0.08
+    legal = False
+    mass = 0
+    while not legal:
+        r = dice.roll(3, 6)
+        if r <= 8:
+            mass =  0.015
+        elif r <= 10:
+            mass =  0.02
+        elif r <= 12:
+            mass = 0.03
+        elif r <= 14:
+            mass = 0.04
+        elif r <= 15:
+            mass = 0.05
+        elif r <= 16:
+            mass =  0.06
+        else:
+            mass = 0.07
+        if mass <= primaryMass:
+            legal = True
+    return mass
 
 def GenerateCompanionMass(primaryMass):
     m = dice.roll(1, 6)
@@ -583,7 +613,7 @@ def GenerateWorlds(parentStar, worlds):
     placements = GeneratePlacements(parentStar, arrangement)
     for placement in placements:
         if placement["Type"] == "Tiny" or placement["Type"] == "Small" or placement["Type"] == "Standard" or placement["Type"] == "Large":
-            w = world.TerrestrialWorld(placement["Type"], parentStar)
+            w = planet.Planet(placement["Type"], parentStar)
             worlds.append(w)
             mod = 0
             if arrangement == "Conventional":
@@ -607,7 +637,7 @@ def GenerateWorlds(parentStar, worlds):
             existingOrbit = 0
             for i in range(0, majorMoons):
                 t = GenerateMoonType(placement["Type"])    
-                m = world.TerrestrialWorld(t, parentStar, parentWorld = w)
+                m = planet.Planet(t, parentStar, parentWorld = w)
                 worlds.append(m)
                 r = GenerateTerrestrialMajorMoonOrbitRadius(t, placement["Type"], existingOrbit)
                 existingOrbit = r
@@ -618,7 +648,7 @@ def GenerateWorlds(parentStar, worlds):
                 m.GenerateBasic()
             existingOrbits = []
             for i in range(0, minorMoons):
-                m = world.Moonlet(parentStar, parentWorld = w)
+                m = moonlet.Moonlet(parentStar, parentWorld = w)
                 worlds.append(m)
                 r = GenerateTerrestrialMinorMoonOrbitRadius(existingOrbits)
                 radius = r * w.GetDiameter()
@@ -628,7 +658,7 @@ def GenerateWorlds(parentStar, worlds):
                 m.GenerateBasic()
                  
         elif placement["Type"] == "Gas Giant":
-            w = world.GasGiant(parentStar)
+            w = gasgiant.GasGiant(parentStar)
             worlds.append(w)
             mod = 0
             eccentricity = GetWorldEccentricity(mod)
@@ -640,7 +670,7 @@ def GenerateWorlds(parentStar, worlds):
             innerMoons = max(dice.roll(2, 6) + GetGasGiantInnerMoonMod(placement["Radius"]), 0)
             w.SetNumInnerMoons(innerMoons)
             for i in range(0, innerMoons):
-                m = world.Moonlet(parentStar, parentWorld = w)
+                m = moonlet.Moonlet(parentStar, parentWorld = w)
                 worlds.append(m)
                 r = GenerateGasGiantInnerMoonOrbitRadius()
                 radius = r * w.GetDiameter()
@@ -656,7 +686,7 @@ def GenerateWorlds(parentStar, worlds):
             existingOrbits = []
             for i in range(0, majorMoons):
                 t = GenerateMoonType("Gas Giant")    
-                m = world.TerrestrialWorld(t, parentStar, parentWorld = w)
+                m = planet.Planet(t, parentStar, parentWorld = w)
                 worlds.append(m)
                 r = GenerateGasGiantMajorMoonOrbitRadius(existingOrbits)
                 radius = r * w.GetDiameter()
@@ -671,7 +701,7 @@ def GenerateWorlds(parentStar, worlds):
                 outerMoons = max(dice.roll(1, 6) + GetGasGiantOuterMoonMod(placement["Radius"]), 0)
             existingOrbits = []
             for i in range(0, innerMoons):
-                m = world.Moonlet(parentStar, parentWorld = w)
+                m = moonlet.Moonlet(parentStar, parentWorld = w)
                 worlds.append(m)
                 r = GenerateGasGiantOuterMoonOrbitRadius(existingOrbits)
                 radius = r * w.GetDiameter()
@@ -681,7 +711,7 @@ def GenerateWorlds(parentStar, worlds):
                 m.GenerateBasic()
 
         elif placement["Type"] == "Belt":
-            w = world.Belt(parentStar)
+            w = belt.Belt(parentStar)
             worlds.append(w)
             mod = 0
             eccentricity = GetWorldEccentricity(mod)

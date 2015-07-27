@@ -236,3 +236,8 @@ class Star(body.Body):
     
     def GetSymbol(self):
         return "*"
+
+
+class BrownDwarf(Star):
+    def __init__(self, mass, age):
+        Star.__init__(self, mass, age)
