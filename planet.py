@@ -286,7 +286,6 @@ class Planet(world.World):
              self.diameter, self.mass, self.density, self.gravity, self.atmosphericPressure, \
              world.PrettyPeriod(self.orbitalPeriod), world.PrettyPeriod(self.rotationalPeriod), self.axialTilt, \
              self.vulcanism, self.tectonics, self.habitability, self.resourceValue, self.affinity)
-        ret += self.atmosphericComposition.__str__()
         return ret
 
     def GenerateBasic(self):
@@ -310,21 +309,22 @@ class Planet(world.World):
 
         """ Find Garden World Now """
         """ TODO: Use First In method """
-        if self.mainType == "Standard" and self.subType == "Ocean":
-            r = dice.roll(3, 6)
-            mod = int(self.parentStar.GetAge() / 0.5)
-            mod = max(mod, 10)
-            r = r + mod
-            if r > 18:
-                self.subType = "Garden"
-        if self.mainType == "Large" and self.subType == "Ocean":
-            r = dice.roll(3, 6)
-            mod = int(self.parentStar.GetAge() / 0.5)
-            mod = max(mod, 5)
-            r = r + mod
-            if r > 18:
-                self.subType = "Garden"
-     
+        if not self.parentStar.GetType() == "L" and not self.parentStar.GetType() == "T" and not self.parentStar.GetType() == "Y":
+            if self.mainType == "Standard" and self.subType == "Ocean":
+                r = dice.roll(3, 6)
+                mod = int(self.parentStar.GetAge() / 0.5)
+                mod = max(mod, 10)
+                r = r + mod
+                if r > 18:
+                    self.subType = "Garden"
+            if self.mainType == "Large" and self.subType == "Ocean":
+                r = dice.roll(3, 6)
+                mod = int(self.parentStar.GetAge() / 0.5)
+                mod = max(mod, 5)
+                r = r + mod
+                if r > 18:
+                    self.subType = "Garden"
+         
         self.density = GenerateDensity(self.mainType, self.subType)
         if blackBodyTemperature < 3.0:
             """ Damn White Dwarves """
@@ -734,3 +734,6 @@ class Planet(world.World):
         if self.parentWorld:
             return True
         return False
+
+    def GetAtmosphericComposition(self):
+        return self.atmosphericComposition

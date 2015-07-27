@@ -31,4 +31,4 @@ class Orbit:
             units = "AU"
         else:
             units = " D"
-        return "% 8.2f %s ecc %0.2f" % (self.radius, units, self.eccentricity)
+        return "% 8.3f %s ecc %0.2f" % (self.radius, units, self.eccentricity)

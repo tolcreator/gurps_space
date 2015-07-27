@@ -135,3 +135,6 @@ class World(body.Body):
 
     def GetIsAMoon(self):
         return False
+
+    def GetAtmosphericComposition(self):
+        return ["None"]

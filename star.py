@@ -40,26 +40,23 @@ stellarEvolutionTable = [
     { "mass":2.00, "type":"A5", "temperature":8200, "lmin":16,     "lmax":20,   "mspan":1.3, "sspan":0.2, "gspan":0.1 }
 ]
 
-class Star(body.Body):
-    """ Mass is in stellar masses. 1.0 = mass of the Sun """
-    """ Age is in Billions of years """
+def GetStellarEvolutionTableEntry(mass):
+    for entry in stellarEvolutionTable:
+        if mass <= entry["mass"]:
+            return entry
+    """ Eh? Ran off the table? What about them big stars? """
+    return entry            
+
+ 
+class StellarObject(body.Body):
     def __init__(self, mass, age):
         body.Body.__init__(self)
         self.age = age
         self.mass = mass
-
-    def Generate(self):
-        self.setEntry = self.GetStellarEvolutionTableEntry()
-        self.luminosityClass = self.DetermineLuminosityClass()
-        self.luminosity = self.DetermineLuminosity() 
-        self.temperature = self.DetermineTemperature()
-        self.spectralType = self.DetermineSpectralType()
-        self.radius = self.DetermineRadius()
-
-    def GetType(self):
-        return "%s %s" % (
-                self.spectralType,
-                self.luminosityClass)
+        """ to be filled later """
+        self.diameter = 0
+        self.luminosity = 0
+        self.temperature = 0
 
     def GetAge(self):
         return self.age
@@ -70,8 +67,8 @@ class Star(body.Body):
     def GetLuminosity(self):
         return self.luminosity
 
-    def GetInitialLuminosity(self):
-        return self.setEntry["lmin"]
+    def GetTemperature(self):
+        return self.temperature
 
     def GetSnowLine(self):
         return 4.85 * math.sqrt(self.GetInitialLuminosity())
@@ -91,12 +88,30 @@ class Star(body.Body):
                      return False
         return False
 
-    def GetStellarEvolutionTableEntry(self):
-        for entry in stellarEvolutionTable:
-            if self.mass <= entry["mass"]:
-                return entry
-        """ Eh? Ran off the table? What about them big stars? """
-        return entry            
+    def GetSymbol(self):
+        return "*"
+
+class Star(StellarObject):
+    """ Mass is in stellar masses. 1.0 = mass of the Sun """
+    """ Age is in Billions of years """
+    def __init__(self, mass, age):
+        StellarObject.__init__(self, mass, age)
+
+    def Generate(self):
+        self.setEntry = GetStellarEvolutionTableEntry(self.mass)
+        self.luminosityClass = self.DetermineLuminosityClass()
+        self.luminosity = self.DetermineLuminosity() 
+        self.temperature = self.DetermineTemperature()
+        self.spectralType = self.DetermineSpectralType()
+        self.radius = self.DetermineRadius()
+
+    def GetType(self):
+        return "%s %s" % (
+                self.spectralType,
+                self.luminosityClass)
+
+    def GetInitialLuminosity(self):
+        return self.setEntry["lmin"]
 
     def DetermineLuminosityClass(self):
         if self.setEntry["mspan"] == 0:
@@ -234,10 +249,74 @@ class Star(body.Body):
             return 0
         return (155000 * math.sqrt(self.luminosity)) / (math.pow(self.temperature, 2))
     
-    def GetSymbol(self):
-        return "*"
+def GetBrownDwarfInitialProperties(mass):
+    if mass <= 0.015:
+        return { "Luminosity":0.00073, "Diameter": 17.5}
+    if mass <= 0.02:
+        return { "Luminosity": 0.0016, "Diameter": 16.8}
+    if mass <= 0.03:
+        return { "Luminosity":0.0045, "Diameter": 15.9}
+    if mass <= 0.04:
+        return { "Luminosity":0.0097, "Diameter": 15.3}
+    if mass <= 0.05:
+        return { "Luminosity":0.017, "Diameter": 14.8}
+    if mass <= 0.06:
+        return { "Luminosity":0.028, "Diameter": 14.5}
+    return { "Luminosity":0.042, "Diameter": 14.2}
 
+def GetBrownDwarfMultipliers(age):
+    if age <= 1:
+        return { "Luminosity": 1.0, "Diameter": 1.0 }
+    if age <= 2:
+        return { "Luminosity": 0.41, "Diameter": 0.96 }
+    if age <= 3:
+        return { "Luminosity": 0.24, "Diameter": 0.94 }
+    if age <= 4:
+        return { "Luminosity": 0.16, "Diameter": 0.93 }
+    if age <= 5:
+        return { "Luminosity": 0.12, "Diameter": 0.91 }
+    if age <= 6:
+        return { "Luminosity": 0.097, "Diameter": 0.90 }
+    if age <= 7:
+        return { "Luminosity": 0.08, "Diameter": 0.90 }
+    if age <= 8:
+        return { "Luminosity": 0.067, "Diameter": 0.89 }
+    if age <= 9:
+        return { "Luminosity": 0.057, "Diameter": 0.88 }
+    if age <= 10:
+        return { "Luminosity": 0.05, "Diameter": 0.88 }
+    if age <= 11:
+        return { "Luminosity": 0.044, "Diameter": 0.87 }
+    if age <= 12:
+        return { "Luminosity": 0.04, "Diameter": 0.87 }
+    if age <= 13:
+        return { "Luminosity": 0.036, "Diameter": 0.87 }
+    return { "Luminosity": 0.032, "Diameter": 0.86 }
 
-class BrownDwarf(Star):
+class BrownDwarf(StellarObject):
     def __init__(self, mass, age):
-        Star.__init__(self, mass, age)
+        StellarObject.__init__(self, mass, age)
+
+    def DetermineTemperature(self):
+        radiusInAu = self.diameter * 0.0000852699302 
+        return math.sqrt( 155000 * math.sqrt(self.luminosity) / radiusInAu )
+
+    def Generate(self):
+        properties = GetBrownDwarfInitialProperties(self.mass)
+        multipliers = GetBrownDwarfMultipliers(self.age)
+        self.luminosity = properties["Luminosity"] * multipliers["Luminosity"]
+        self.diameter = properties["Diameter"] * multipliers["Diameter"]
+        self.initialLuminosity = properties["Luminosity"]
+        self.temperature = self.DetermineTemperature()
+        if self.temperature >= 1300:
+            self.spectralType = "L"
+        elif self.temperature >= 225:
+            self.spectralType = "T"
+        else:
+            self.spectralType = "Y"
+
+    def GetInitialLuminosity(self):
+        return self.initialLuminosity
+
+    def GetType(self):
+        return self.spectralType

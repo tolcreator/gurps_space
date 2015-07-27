@@ -68,6 +68,10 @@ def GenerateAge():
     return entry["base"] + (entry["stepa"] * a) + (entry["stepb"] * b)
 
 def GeneratePrimaryMass():
+    """ Half of all stars are brown dwarfs """
+    r = dice.roll(1, 6)
+    if r <= 3:
+        return GenerateBrownDwarfMass(0)
     f = dice.roll(3, 6)
     s = dice.roll(3, 6)
     return stellarMassTable[f][s]
@@ -106,7 +110,7 @@ def GenerateCompanionMass(primaryMass):
         c = dice.roll(m-1, 6)
         companionMass = primaryMass - (float(c) * 0.05)
         if companionMass < 0.10:
-            companionMass = 0.10
+            companionMass = GenerateBrownDwarfMass(primaryMass)
         if companionMass == 1.55:
             companionMass = 1.50
         if companionMass == 1.65:
@@ -199,7 +203,10 @@ def GenerateStars(age, stars):
     numStars = GenerateNumStars()
     """ Primary Star """
     primaryMass = GeneratePrimaryMass()
-    primary = star.Star(primaryMass, age)
+    if primaryMass < 0.10:
+        primary = star.BrownDwarf(primaryMass, age)
+    else:
+        primary = star.Star(primaryMass, age)
     primary.Generate()
     stars.append(primary)
 
@@ -209,7 +216,10 @@ def GenerateStars(age, stars):
     for x in range(1, numStars):
         """ The mass of the primary may have changed during generation """
         companionMass = GenerateCompanionMass(primary.GetMass())
-        companion = star.Star(companionMass, age)
+        if companionMass < 0.10:
+            companion = star.BrownDwarf(companionMass, age)
+        else:
+            companion = star.Star(companionMass, age)
         companion.Generate()
         stars.append(companion)
         details = GenerateCompanionOrbit(primary, mod, minRadius, 0)
@@ -223,7 +233,10 @@ def GenerateStars(age, stars):
         if details["separation"] == "Distant" and r >= 11:
             """ The companion has a companion """
             distantMass = GenerateCompanionMass(companionMass)
-            distant = star.Star(distantMass, age)
+            if distantMass < 0.10:
+                distant = star.BrownDwarf(distantMass, age)
+            else:
+                distant = star.Star(distantMass, age)
             distant.Generate()
             stars.append(distant)
             maxRadius = myOrbit.GetMinSeparation() / 3
@@ -244,7 +257,11 @@ def GenerateGasGiantArrangement(parentStar):
     if disqualified:
         return "None"
 
-    r = dice.roll(3, 6)
+    if parentStar.GetType() == "L" or parentStar.GetType() == "T" or parentStar.GetType() == "Y":
+        mod = -4
+    else:
+        mod = 0
+    r = dice.roll(3, 6) + mod
     if r <= 10:
         return "None"
     if r <= 12:
