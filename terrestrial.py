@@ -351,13 +351,12 @@ class Planet(world.World):
         possibleLunarLock = False
         possibleSolarLock = False
         potentialRotationalPeriod = 0
+        self.orbitalPeriod = self.orbit.GetPeriod()
         if self.parentWorld:
-            self.orbitalPeriod = math.sqrt(pow(self.orbit.GetRadius(), 3) / self.parentWorld.GetMass()) * 0.166
             tide = (2230000 * self.parentWorld.GetMass() * self.diameter) / pow(self.orbit.GetRadius(), 3)
             if tide > 50:
                 parentLock = True
         else:
-            self.orbitalPeriod = math.sqrt(pow(self.orbit.GetRadius(), 3) / self.parentStar.GetMass()) * 365.26
             tide = (0.47 * self.parentStar.GetMass() * self.diameter) / pow(self.orbit.GetRadius(), 3)
             for o in self.orbiters:
                 m = o.GetOrbiter()

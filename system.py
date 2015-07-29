@@ -1,7 +1,7 @@
 import dice
 import star
 import world
-import planet
+import terrestrial
 import gasgiant
 import moonlet
 import belt
@@ -630,7 +630,7 @@ def GenerateWorlds(parentStar, worlds):
     placements = GeneratePlacements(parentStar, arrangement)
     for placement in placements:
         if placement["Type"] == "Tiny" or placement["Type"] == "Small" or placement["Type"] == "Standard" or placement["Type"] == "Large":
-            w = planet.Planet(placement["Type"], parentStar)
+            w = terrestrial.Planet(placement["Type"], parentStar)
             worlds.append(w)
             mod = 0
             if arrangement == "Conventional":
@@ -654,7 +654,7 @@ def GenerateWorlds(parentStar, worlds):
             existingOrbit = 0
             for i in range(0, majorMoons):
                 t = GenerateMoonType(placement["Type"])    
-                m = planet.Planet(t, parentStar, parentWorld = w)
+                m = terrestrial.Planet(t, parentStar, parentWorld = w)
                 worlds.append(m)
                 r = GenerateTerrestrialMajorMoonOrbitRadius(t, placement["Type"], existingOrbit)
                 existingOrbit = r
@@ -703,7 +703,7 @@ def GenerateWorlds(parentStar, worlds):
             existingOrbits = []
             for i in range(0, majorMoons):
                 t = GenerateMoonType("Gas Giant")    
-                m = planet.Planet(t, parentStar, parentWorld = w)
+                m = terrestrial.Planet(t, parentStar, parentWorld = w)
                 worlds.append(m)
                 r = GenerateGasGiantMajorMoonOrbitRadius(existingOrbits)
                 radius = r * w.GetDiameter()

@@ -112,6 +112,9 @@ class World(body.Body):
         self.diameter = 0
         self.mass = 0
 
+    def GetParentStar(self):
+        return self.parentStar
+
     def GetType(self):
         return self.mainType
 

@@ -67,6 +67,9 @@ class StellarObject(body.Body):
     def GetLuminosity(self):
         return self.luminosity
 
+    def GetDiameter(self):
+        return self.diameter
+
     def GetTemperature(self):
         return self.temperature
 
@@ -103,9 +106,11 @@ class Star(StellarObject):
         self.luminosity = self.DetermineLuminosity() 
         self.temperature = self.DetermineTemperature()
         self.spectralType = self.DetermineSpectralType()
-        self.radius = self.DetermineRadius()
+        self.diameter = self.DetermineRadius() * 2
 
     def GetType(self):
+        if self.spectralType == "D":
+            return "D"
         return "%s %s" % (
                 self.spectralType,
                 self.luminosityClass)
@@ -298,7 +303,7 @@ class BrownDwarf(StellarObject):
         StellarObject.__init__(self, mass, age)
 
     def DetermineTemperature(self):
-        radiusInAu = self.diameter * 0.0000852699302 
+        radiusInAu = self.diameter / 2
         return math.sqrt( 155000 * math.sqrt(self.luminosity) / radiusInAu )
 
     def Generate(self):
@@ -306,6 +311,8 @@ class BrownDwarf(StellarObject):
         multipliers = GetBrownDwarfMultipliers(self.age)
         self.luminosity = properties["Luminosity"] * multipliers["Luminosity"]
         self.diameter = properties["Diameter"] * multipliers["Diameter"]
+        """ But that's in Earth Diameters. I want AU """
+        self.diameter = self.diameter * 0.0000852699302
         self.initialLuminosity = properties["Luminosity"]
         self.temperature = self.DetermineTemperature()
         if self.temperature >= 1300:

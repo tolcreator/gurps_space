@@ -1,4 +1,5 @@
 import body
+import math
 
 class Orbit:
     def __init__(self, orbitee, orbiter, radius, eccentricity, oType="Solar"):
@@ -25,6 +26,13 @@ class Orbit:
 
     def GetMaxSeparation(self):
         return (1 + self.eccentricity) * self.radius
+
+    def GetPeriod(self):
+        """ TODO Star orbiting a star """
+        if self.oType == "Solar":
+            return math.sqrt(pow(self.radius, 3) / self.orbitee.GetMass()) * 365.26
+        else:
+            return math.sqrt(pow(self.radius, 3) / self.orbitee.GetMass()) * 0.166
 
     def __str__(self):
         if self.oType == "Solar":
