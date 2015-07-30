@@ -286,6 +286,13 @@ class Planet(world.World):
              self.diameter, self.mass, self.density, self.gravity, self.atmosphericPressure, \
              world.PrettyPeriod(self.orbitalPeriod), world.PrettyPeriod(self.rotationalPeriod), self.axialTilt, \
              self.vulcanism, self.tectonics, self.habitability, self.resourceValue, self.affinity)
+        ret = ret + self.ShowAtmosphericComposition()
+        return ret
+
+    def ShowAtmosphericComposition(self):
+        ret = ""
+        for component in self.atmosphericComposition:
+            ret = ret + component + " "
         return ret
 
     def GenerateBasic(self):
@@ -705,14 +712,16 @@ class Planet(world.World):
             elif "Mildly Toxic" in self.atmosphericComposition or "Highly Toxic" in self.atmosphericComposition or "Lethally Toxic" in self.atmosphericComposition:
                 self.habitability = self.habitability - 1
 
-        """ Hydrosphere """
-        if self.hydrosphere > 1:
-            if self.hydrosphere <= 59:
-                self.habitability = self.habitability + 1
-            elif self.hydrosphere <= 90:
-                self.habitability = self.habitability + 2
-            elif self.hydrosphere <= 90:
-                self.habitability = self.habitability + 1
+        """ Hydrosphere... IF liquid water """
+        if self.mainType == "Standard" or self.mainType == "Large":
+            if self.subType == "Ice" or self.subType == "Ocean" or self.subType == "Garden":
+                if self.hydrosphere > 1:
+                    if self.hydrosphere <= 59:
+                        self.habitability = self.habitability + 1
+                    elif self.hydrosphere <= 90:
+                        self.habitability = self.habitability + 2
+                    elif self.hydrosphere <= 90:
+                        self.habitability = self.habitability + 1
         
         self.affinity = self.habitability + self.resourceValue        
 

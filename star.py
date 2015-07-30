@@ -58,6 +58,9 @@ class StellarObject(body.Body):
         self.luminosity = 0
         self.temperature = 0
 
+    def ShowDetails(self):
+        return "%-10.5f %-7d %10.5f %10.5f" % (self.luminosity, self.temperature, self.diameter, self.mass)
+
     def GetAge(self):
         return self.age
 
@@ -93,6 +96,10 @@ class StellarObject(body.Body):
 
     def GetSymbol(self):
         return "*"
+
+def Banner():
+    return "                 Stellar Data                 %-10s %-10s %-10s %-10s" % \
+        ("Luminosity", "Temp.", "Diameter", "Mass") 
 
 class Star(StellarObject):
     """ Mass is in stellar masses. 1.0 = mass of the Sun """

@@ -7,3 +7,6 @@ class Moonlet(world.World):
 
     def GetIsAMoon(self):
         return True
+
+    def ShowDetails(self):
+        return "Vacuum     ----       ----       ----       ----       ----       ----       ----       ----       ----       ----       ----       ----       ----       ----       ----       ----"

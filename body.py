@@ -36,14 +36,14 @@ class Body:
         if self.orbit:
             indent = self.orbit.GetOrbitee().GetIndent()
             if indent:
-                return "| " + indent
+                return " |" + indent
             else:
-                return "| "
+                return " |"
         return ""
 
     def __str__(self):
         indent = self.GetIndent()
-        basic = indent + self.ShowBasic()
+        basic = indent + "_" + self.ShowBasic()
         ret = "%-28s " % basic
         ret = ret + self.ShowDetails()
         moonlets = 0
@@ -57,5 +57,7 @@ class Body:
             else:
                 moonlets = moonlets + 1
         if moonlets:
-            ret = ret + "\n                     " + indent + "| " + ". %d Moonlets" % moonlets
+            basic = indent + " |" + "_. %d Moonlets" % moonlets
+            ret = ret + "\n                 %-28s" % basic + \
+            " Vacuum     ----       ----       ----       ----       ----       ----       ----       ----       ----       ----       ----       ----       ----       --  --  --"
         return ret

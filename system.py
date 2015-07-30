@@ -764,7 +764,11 @@ class System:
               
     def __str__(self):
         primary = self.stars[0]
-        return world.Banner() + "\n                     " + primary.__str__()
+        ret = "System Age: %4.1f\n" % self.age
+        ret = ret + star.Banner() + "\n"
+        ret = ret + world.Banner() + "\n"
+        ret = ret + "                 " + primary.__str__()
+        return ret
 
     def GetMainworld(self):
         mainWorld = None

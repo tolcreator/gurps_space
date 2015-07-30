@@ -142,7 +142,7 @@ class GasGiant(world.World):
         return self.GetSymbol() + " " + self.subType + " " + self.mainType
 
     def ShowDetails(self):
-        return "----       ----       ----       ----      %- 10.3f %- 10.3f %- 10.3f %- 10.3f  ----       %-10s %-10s %- 10d ----       ----      " % \
+        return "----       ----       ----       ----      %- 10.3f %- 10.3f %- 10.3f %- 10.3f  ----       %-10s %-10s %- 10d ----       ----       --  --  --" % \
             (self.diameter, self.mass, self.density, self.gravity, world.PrettyPeriod(self.orbitalPeriod), world.PrettyPeriod(self.rotationalPeriod), self.axialTilt)
 
     def GetNumSulfurWorlds(self):

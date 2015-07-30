@@ -91,7 +91,7 @@ def GenerateRotationalPeriod(mainType, subType, tidalEffect):
     return float(r + mod) / 24
 
 def Banner():
-    return "                                                  %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-3s %-3s %-3s" % \
+    return "   Orbit    Ecc  World Data                   %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-3s %-3s %-3s Atmospheric Composition" % \
         ("Atmosphere", "Hydro%", "Climate", "Avg Temp", \
          "Diameter", "Mass", "Density", "Gravity", "Pressure", \
          "Orbital", "Rotational", "Axial Tilt", \
