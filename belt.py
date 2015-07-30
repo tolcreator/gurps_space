@@ -5,6 +5,9 @@ class Belt(world.World):
     def __init__(self, parentStar):
         world.World.__init__(self, "Belt", parentStar)
 
+    def ShowUWP(self):
+        return "X000000-0"
+
     def GenerateDetails(self):
         r = dice.roll(3, 6)
         if r <= 3:

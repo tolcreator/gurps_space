@@ -98,7 +98,7 @@ class StellarObject(body.Body):
         return "*"
 
 def Banner():
-    return "                 Stellar Data                 %-10s %-10s %-10s %-10s" % \
+    return "                 Stellar Data                            %-10s %-10s %-10s %-10s" % \
         ("Luminosity", "Temp.", "Diameter", "Mass") 
 
 class Star(StellarObject):

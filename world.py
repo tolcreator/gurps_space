@@ -28,6 +28,9 @@ def GetClimate(temp):
 def GetGravity(density, diameter):
     return density * diameter
 
+def ShowUWP(self):
+    return "WTF"
+
 def GetMass(density, diameter):
     return density * pow(diameter, 3)
 
@@ -91,8 +94,8 @@ def GenerateRotationalPeriod(mainType, subType, tidalEffect):
     return float(r + mod) / 24
 
 def Banner():
-    return "   Orbit    Ecc  World Data                   %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-3s %-3s %-3s Atmospheric Composition" % \
-        ("Atmosphere", "Hydro%", "Climate", "Avg Temp", \
+    return "   Orbit    Ecc  World Data                   %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-3s %-3s %-3s Atmospheric Composition" % \
+        ("UWP", "Atmosphere", "Hydro%", "Climate", "Avg Temp", \
          "Diameter", "Mass", "Density", "Gravity", "Pressure", \
          "Orbital", "Rotational", "Axial Tilt", \
          "Vulcanism", "Tectonics", "Hab", "Res", "Aff")

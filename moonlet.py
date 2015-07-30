@@ -5,6 +5,9 @@ class Moonlet(world.World):
         world.World.__init__(self, "Moonlet", parentStar)
         self.parentWorld = parentWorld
 
+    def ShowUWP(self):
+        return "XS00000-0"
+
     def GetIsAMoon(self):
         return True
 

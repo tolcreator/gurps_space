@@ -277,6 +277,100 @@ class Planet(world.World):
         world.World.__init__(self, mainType, parentStar)
         self.parentWorld = parentWorld
 
+    def ShowUWP(self):
+        ret = "X"
+        ret = ret + self.GetUWPSize()
+        ret = ret + self.GetUWPAtmosphere()
+        ret = ret + self.GetUWPHydrosphere()
+        ret = ret + "000-0"
+        return ret
+
+    def GetUWPSize(self):
+        km = self.diameter * 12742
+        if km <= 800:
+            return "S"
+        if km <= 2399:
+            return "1"
+        if km <= 3999:
+            return "2"
+        if km <= 5599:
+            return "3"
+        if km <= 7199:
+            return "4"
+        if km <= 8799:
+            return "5"
+        if km <= 10399:
+            return "6"
+        if km <= 11999:
+            return "7"
+        if km <= 13599:
+            return "8"
+        if km <= 15199:
+            return "9"
+        if km <= 16799:
+            return "A"
+        return "B"
+
+    def GetUWPHydrosphere(self):
+        if self.hydrosphere <= 4:
+            return "0"
+        if self.hydrosphere <= 14:
+            return "1"
+        if self.hydrosphere <= 24:
+            return "2"
+        if self.hydrosphere <= 34:
+            return "3"
+        if self.hydrosphere <= 44:
+            return "4"
+        if self.hydrosphere <= 54:
+            return "5"
+        if self.hydrosphere <= 64:
+            return "6"
+        if self.hydrosphere <= 74:
+            return "7"
+        if self.hydrosphere <= 84:
+            return "8"
+        if self.hydrosphere <= 94:
+            return "9"
+        return "A"
+
+    def GetUWPAtmosphere(self):
+        if self.atmosphericPressure <= 0.001:
+            return "0"
+        if self.atmosphericPressure <= 0.1:
+            return "1"
+        if "Suffocating" in self.atmosphericComposition:
+            if "Corrosive" in self.atmosphericComposition:
+                if self.atmosphericPressure <= 10:
+                    return "B"
+                else:
+                    return "C"
+            else:
+                return "A"
+        if self.atmosphericPressure <= 0.42:
+            if "Marginal" in self.atmosphericComposition:
+                return "2"
+            else:
+                return "3"
+        if self.atmosphericPressure <= 0.7:
+            if "Marginal" in self.atmosphericComposition:
+                return "4"
+            else:
+                return "5"
+        if self.atmosphericPressure <= 1.49:
+            if "Marginal" in self.atmosphericComposition:
+                return "7"
+            else:
+                return "6"
+        if self.atmosphericPressure <= 2.49:
+            if "Marginal" in self.atmosphericComposition:
+                return "9"
+            else:
+                return "8"
+        if self.atmosphericPressure <= 10:
+            return "A"
+        return "B"
+
     def ShowBasic(self):
         return self.GetSymbol() + " " + self.mainType + " " + self.subType
 

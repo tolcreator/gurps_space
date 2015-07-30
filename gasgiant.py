@@ -110,6 +110,13 @@ class GasGiant(world.World):
         self.numSulfurWorlds = 0
         self.numInnerMoons = 0
 
+    def ShowUWP(self):
+        if self.subType == "Small":
+            return "SGG"
+        if self.subType == "Medium":
+            return "MGG"
+        return "LGG"
+
     def GenerateBasic(self):
         mod = 0
         solarRadius = self.GetOrbit().GetRadius()

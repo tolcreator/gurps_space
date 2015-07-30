@@ -41,10 +41,14 @@ class Body:
                 return " |"
         return ""
 
+    def ShowUWP(self):
+        return ""
+
     def __str__(self):
         indent = self.GetIndent()
         basic = indent + "_" + self.ShowBasic()
         ret = "%-28s " % basic
+        ret = ret + "%-10s " % self.ShowUWP()
         ret = ret + self.ShowDetails()
         moonlets = 0
         for o in self.orbiters:
