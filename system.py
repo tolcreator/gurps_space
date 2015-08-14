@@ -67,10 +67,10 @@ def GenerateAge():
     b = dice.roll(1, 6) - 1
     return entry["base"] + (entry["stepa"] * a) + (entry["stepb"] * b)
 
-def GeneratePrimaryMass():
+def GeneratePrimaryMass(brownDwarfFlag):
     """ Half of all stars are brown dwarfs """
     r = dice.roll(1, 6)
-    if r <= 3:
+    if brownDwarfFlag and r <= 3:
         return GenerateBrownDwarfMass(0)
     f = dice.roll(3, 6)
     s = dice.roll(3, 6)
@@ -199,10 +199,10 @@ def GenerateCompanionOrbit(primary, separationMod, minRadius, maxRadius):
         eccentricity = 0.95
     return { "separation":separation, "radius":radius, "eccentricity":eccentricity }
 
-def GenerateStars(age, stars):
+def GenerateStars(age, stars, brownDwarfFlag):
     numStars = GenerateNumStars()
     """ Primary Star """
-    primaryMass = GeneratePrimaryMass()
+    primaryMass = GeneratePrimaryMass(brownDwarfFlag)
     if primaryMass < 0.10:
         primary = star.BrownDwarf(primaryMass, age)
     else:
@@ -751,14 +751,15 @@ def GenerateWorlds(parentStar, worlds):
                 m.GenerateDetails()
 
 class System:
-    def __init__(self):
+    def __init__(self, brownDwarfFlag = True):
         self.stars = []
         self.worlds = []
         self.age = 0.0
+        self.brownDwarfFlag = brownDwarfFlag
 
     def Generate(self):
         self.age = GenerateAge()
-        GenerateStars(self.age, self.stars)
+        GenerateStars(self.age, self.stars, self.brownDwarfFlag)
         for s in self.stars:
             GenerateWorlds(s, self.worlds)
               
@@ -777,4 +778,25 @@ class System:
             if w.GetAffinity() > highestAffinity:
                 highestAffinity = w.GetAffinity()
                 mainWorld = w
+            elif w.GetAffinity() == highestAffinity:
+                if mainWorld:
+                    if mainWorld.GetType() == "Belt":
+                        if not w.GetType() == "Belt":
+                            mainWorld = w
         return mainWorld
+
+    def GetHighestResource(self):
+        highestResource = -5
+        for w in self.worlds:
+            if w.GetResource() > highestResource:
+                highestResource = w.GetResource()
+        return highestResource
+
+    def GetHighestAffinity(self):
+        highestAffinity = -5
+        for w in self.worlds:
+            if w.GetAffinity() > highestAffinity:
+                highestAffinity = w.GetAffinity()
+        return highestAffinity
+
+

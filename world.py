@@ -137,7 +137,10 @@ class World(body.Body):
         """ Do Nothing Yet """
     
     def GetAffinity(self):
-        return 0
+        return -10
+
+    def GetResource(self):
+        return -5
 
     def GetIsAMoon(self):
         return False

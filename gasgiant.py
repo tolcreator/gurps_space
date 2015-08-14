@@ -166,3 +166,6 @@ class GasGiant(world.World):
 
     def GetAffinity(self):
         return -10
+
+    def GetResource(self):
+        return -5

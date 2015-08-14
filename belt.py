@@ -50,6 +50,9 @@ class Belt(world.World):
     def GetAffinity(self):
         return self.affinity
 
+    def GetResource(self):
+        return self.resourceValue
+
     def ShowDetails(self):
         return "Vacuum     ----       ----       ----       ----       ----       ----       ----       ----       ----       ----       ----       ----       ----       %-3d %-3d %-3d" % \
              (self.habitability, self.resourceValue, self.affinity)

@@ -48,7 +48,10 @@ def GenerateAtmosphericMass(mainType, subType):
     if disqualified:
         return 0.0
 
-    r = dice.roll(3, 6)
+    if mainType == "Standard" and subType == "Garden":
+        r = dice.roll(3, 12) - 9
+    else:
+        r = dice.roll(3, 6)
     mass = float(r) / 10
     r = dice.roll(1, 20) - 10
     var = float(r) / 200
@@ -831,6 +834,9 @@ class Planet(world.World):
 
     def GetAffinity(self):
         return self.affinity
+
+    def GetResource(self):
+        return self.resourceValue
 
     def GetIsAMoon(self):
         if self.parentWorld:
